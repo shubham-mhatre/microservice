@@ -18,7 +18,7 @@ public class OrderController {
 
 	@PostMapping("/place")
 	public ResponseEntity<String> placeOrder(@RequestBody OrderRequest orderRequest) {
-		String orderNumber= orderService.placeOrder(orderRequest);
-		return ResponseEntity.ok("order is placed. Order number is "+orderNumber);
+		String orderSummary= orderService.placeOrder(orderRequest);
+		return ResponseEntity.ok(orderSummary);
 	}
 }

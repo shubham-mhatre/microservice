@@ -1,6 +1,8 @@
 package com.sm.inventory_service.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -16,13 +18,21 @@ public class InventoryService {
 
 	private final InventoryRepository inventoryRepository;
 
-	public List<InventoryResponseDto> isInStock(List<String> skuCode) {
+	public List<InventoryResponseDto> isInStock(List<String> skuCodes) {
 
-		List<Inventory> inventory= inventoryRepository.findBySkuCodeIn(skuCode);
+		List<Inventory> inventoryList= inventoryRepository.findBySkuCodeIn(skuCodes);
+		
+		Map<String, Inventory> inventoryMap = inventoryList.stream()
+	            .collect(Collectors.toMap(Inventory::getSkuCode, inventory -> inventory));
 
-		return  inventory.stream()
-				.map(data->new InventoryResponseDto(data.getSkuCode(),data.getQuantity()>0))
-				.toList();
+	    // Iterate over the input skuCodes list and create response based on inventory data
+	    return skuCodes.stream()
+	            .map(skuCode -> {
+	                Inventory inventory = inventoryMap.get(skuCode);
+	                boolean isPresent = inventory != null && inventory.getQuantity() > 0;
+	                return new InventoryResponseDto(skuCode, isPresent);
+	            })
+	            .toList();
 		
 	}
 }
