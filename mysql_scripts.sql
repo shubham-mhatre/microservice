@@ -8,3 +8,23 @@ CREATE TABLE `product` (
 )
 ENGINE=InnoDB
 ;
+
+CREATE TABLE `orders` (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`order_number` VARCHAR(50) NULL DEFAULT NULL,
+	PRIMARY KEY (`id`)
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+CREATE TABLE `order_line_items` (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`sku_code` VARCHAR(50) NULL DEFAULT NULL,
+	`price` DOUBLE NULL DEFAULT NULL,
+	`quantity` INT NULL DEFAULT NULL,
+	PRIMARY KEY (`id`)
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
