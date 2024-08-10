@@ -41,3 +41,14 @@ COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
+CREATE TABLE `inventory` (
+	`id` INT(11) NOT NULL AUTO_INCREMENT,
+	`quantity` INT(11) NULL DEFAULT NULL,
+	`sku_code` VARCHAR(255) NULL DEFAULT NULL,
+	PRIMARY KEY (`id`)
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+

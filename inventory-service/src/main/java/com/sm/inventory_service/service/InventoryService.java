@@ -1,9 +1,12 @@
 package com.sm.inventory_service.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.sm.inventory_service.entity.Inventory;
 import com.sm.inventory_service.entity.repository.InventoryRepository;
+import com.sm.inventory_service.response.dto.InventoryResponseDto;
 
 import lombok.RequiredArgsConstructor;
 
@@ -13,13 +16,13 @@ public class InventoryService {
 
 	private final InventoryRepository inventoryRepository;
 
-	public boolean isInStock(String skuCode) {
-		boolean isPresent=true;
-		Inventory inventory= inventoryRepository.findBySkuCode(skuCode);
+	public List<InventoryResponseDto> isInStock(List<String> skuCode) {
 
-		if(inventory==null) {
-			isPresent= false;
-		}
-		return isPresent;
+		List<Inventory> inventory= inventoryRepository.findBySkuCodeIn(skuCode);
+
+		return  inventory.stream()
+				.map(data->new InventoryResponseDto(data.getSkuCode(),data.getQuantity()>0))
+				.toList();
+		
 	}
 }
