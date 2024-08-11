@@ -5,7 +5,8 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.sm.order_service.dto.response.InventoryResponseDto;
 
@@ -18,19 +19,16 @@ public class ExecuteAPIService {
 	@Value("${inventory.service.uri}")
 	private String inventoryServiceUrl;
 
-	private final WebClient webClient;
+	private final RestTemplate restTemplate;
 
+	public List<InventoryResponseDto> executeInventoryBySku1(List<String> skuList) {
+        String url = UriComponentsBuilder.fromUriString(inventoryServiceUrl)
+                .queryParam("skuCode", String.join(",", skuList))
+                .toUriString();
 
-	public List<InventoryResponseDto> executeInventoryBySku(List<String> skuList){
+        InventoryResponseDto[] response = restTemplate.getForObject(url, InventoryResponseDto[].class);
 
-		InventoryResponseDto[] response=webClient.get()
-				.uri(inventoryServiceUrl,urlBuilder -> 
-				urlBuilder.queryParam("skuCode", skuList).build())
-				.retrieve()
-				.bodyToMono(InventoryResponseDto[].class)
-				.block();		
-
-		return Arrays.asList(response);
-	}
+        return Arrays.asList(response);
+    }
 
 }
