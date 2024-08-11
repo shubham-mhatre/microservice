@@ -31,7 +31,7 @@ public class OrderService {
 		order.setOrderLineItems(orderLineItems);
 		
 		List<String>skuList= orderLineItems.stream().map(OrderLineItems::getSkuCode).toList();
-		List<InventoryResponseDto>inventoryResponse=executeAPIService.executeInventoryBySku(skuList);
+		List<InventoryResponseDto>inventoryResponse=executeAPIService.executeInventoryBySku1(skuList);
 		
 		boolean allProductInStock=inventoryResponse.stream()
 				.allMatch(InventoryResponseDto::isInStock);
