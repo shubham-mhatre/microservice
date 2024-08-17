@@ -52,3 +52,13 @@ ENGINE=InnoDB
 ;
 
 
+CREATE TABLE `user_credentials` (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`name` VARCHAR(50) NULL,
+	`email` VARCHAR(50) NULL,
+	`password` VARCHAR(50) NULL,
+	PRIMARY KEY (`id`)
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
