@@ -22,5 +22,10 @@ public class FallbackController {
     public ResponseEntity<String> inventoryServiceFallback() {
         return new ResponseEntity<>("Inventory Service is currently unavailable. Please try again later.", HttpStatus.OK);
     }
+    
+    @RequestMapping("/fallback/auth-jwt")
+    public ResponseEntity<String> authJwtServiceFallback() {
+        return new ResponseEntity<>("Auth JWT Service is currently unavailable. Please try again later.", HttpStatus.OK);
+    }
 
 }
