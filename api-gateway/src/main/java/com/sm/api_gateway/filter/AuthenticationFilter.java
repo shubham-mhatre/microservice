@@ -39,8 +39,8 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 					jwtUtil.validateToken(authHeader);
 
 				} catch (Exception e) {
-					System.out.println("invalid access...!");
-					throw new RuntimeException("un authorized access to application");
+					System.out.println("invalid access...! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+					throw new RuntimeException("un authorized access to application: " + e.getMessage(), e);
 				}
 			}
 			return chain.filter(exchange);
