@@ -11,4 +11,6 @@ import com.sm.auth.entity.UserCredentials;
 public interface UserCredentialsRepository extends JpaRepository<UserCredentials, Integer> {
 
 	Optional<UserCredentials> findByName(String username);
+	
+	Boolean existsByName(String userName);
 }
