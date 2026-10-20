@@ -12,6 +12,7 @@ import com.sm.product_service.dto.response.ApiResponse;
 import com.sm.product_service.dto.response.PageResponse;
 import com.sm.product_service.dto.response.ProductResponse;
 import com.sm.product_service.entities.Product;
+import com.sm.product_service.exception.ResourceNotFoundException;
 import com.sm.product_service.mapper.ProductMapper;
 import com.sm.product_service.repositories.ProductRepository;
 
@@ -67,6 +68,26 @@ public class ProductService {
 	    return ApiResponse.success(
 	            "Products retrieved successfully",
 	            pageResponse
+	    );
+	}
+	
+	public ApiResponse<ProductResponse> getProductById(Long id) {
+
+	    Product product = productRepository.findById(id)
+	            .orElseThrow(() ->
+	                    new ResourceNotFoundException(
+	                            "Product not found with ID: " + id
+	                    )
+	            );
+
+	    ProductResponse response =
+	            ProductMapper.INSTANCE.mapEntityToProductResponse(product);
+
+	    return new ApiResponse<>(
+	            true,
+	            "Product fetched successfully",
+	            response,
+	            null
 	    );
 	}
 

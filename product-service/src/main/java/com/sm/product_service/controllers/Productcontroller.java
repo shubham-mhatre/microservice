@@ -2,6 +2,7 @@ package com.sm.product_service.controllers;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,20 +21,27 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RequestMapping("/api")
 public class Productcontroller {
-	
+
 	private final ProductService productService;
 
 	@PostMapping
 	public ResponseEntity<ApiResponse<ProductResponse>> saveProduct(@RequestBody ProductRequest request) {
-		ApiResponse<ProductResponse> productResponse= productService.saveProduct(request);
-		return  ResponseEntity.ok(productResponse);
+		ApiResponse<ProductResponse> productResponse = productService.saveProduct(request);
+		return ResponseEntity.ok(productResponse);
 	}
-	
+
 	@GetMapping
-	public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getAll(
-			@RequestParam(defaultValue = "0") int page,
-	        @RequestParam(defaultValue = "10") int size){
-		ApiResponse<PageResponse<ProductResponse>> productList=productService.getAll(page,size);
-		return  ResponseEntity.ok(productList);
+	public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getAll(@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size) {
+		ApiResponse<PageResponse<ProductResponse>> productList = productService.getAll(page, size);
+		return ResponseEntity.ok(productList);
+	}
+
+	@GetMapping("/{id}")
+	public ResponseEntity<ApiResponse<ProductResponse>> getProductById(@PathVariable Long id) {
+
+		ApiResponse<ProductResponse> response = productService.getProductById(id);
+
+		return ResponseEntity.ok(response);
 	}
 }

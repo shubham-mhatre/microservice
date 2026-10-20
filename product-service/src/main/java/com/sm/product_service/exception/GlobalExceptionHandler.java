@@ -17,6 +17,18 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 	
+	@ExceptionHandler(ResourceNotFoundException.class)
+	public ResponseEntity<ExceptionResponseDto> handleResourceNotFoundException(Exception ex, HttpServletRequest request) {
+		
+		log.error("ResourceNotFoundException on {}", request.getRequestURI(), ex);
+		
+		ExceptionResponseDto exceptionResponse = new ExceptionResponseDto(LocalDateTime.now(), ex.getMessage(),
+				HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase(),
+				request.getRequestURI(), Boolean.FALSE);
+
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exceptionResponse);
+	}
+	
 	@ExceptionHandler(HttpStatusCodeException.class)
 	public ResponseEntity<ExceptionResponseDto> handleHttpStatusCodeException(
 	        HttpStatusCodeException ex,
@@ -24,7 +36,7 @@ public class GlobalExceptionHandler {
 
 	    HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
 
-	    log.error("Downstream service error on {}: {}",
+	    log.error("HttpStatusCodeException : Downstream service error on {}: {}",
 	            request.getRequestURI(), ex.getMessage());
 
 	    ExceptionResponseDto exceptionResponse = new ExceptionResponseDto(
