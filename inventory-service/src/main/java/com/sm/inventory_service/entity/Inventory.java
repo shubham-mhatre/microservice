@@ -35,5 +35,8 @@ public class Inventory {
 	
 	private Integer quantity;
 	
+	@Column(nullable = false)
+	private boolean active = true;
+	
 
 }

@@ -28,4 +28,14 @@ public class InventoryServiceClient {
 
 		restTemplate.postForEntity(url, request, InventoryResponseDto.class);
 	}
+	
+	public void deactivateInventory(String skuCode) {
+
+        String url = inventoryServiceUrl
+                + "inventory/api/sku/"
+                + skuCode
+                + "/deactivate";
+
+        restTemplate.put(url, null);
+    }
 }

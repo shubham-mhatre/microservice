@@ -1,6 +1,7 @@
 package com.sm.product_service.controllers;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -63,6 +64,15 @@ public class Productcontroller {
 
 	    ApiResponse<ProductResponse> response =
 	            productService.updateProduct(id, request);
+
+	    return ResponseEntity.ok(response);
+	}
+	
+	@DeleteMapping("/{id}")
+	public ResponseEntity<ApiResponse<Void>> deleteProduct(
+	        @PathVariable Long id) {
+
+	    ApiResponse<Void> response = productService.deleteProduct(id);
 
 	    return ResponseEntity.ok(response);
 	}

@@ -133,5 +133,29 @@ public class ProductService {
 	            null
 	    );
 	}
+	
+	@Transactional
+	public ApiResponse<Void> deleteProduct(Long id) {
+
+	    Product product = productRepository.findById(id)
+	            .orElseThrow(() -> new ResourceNotFoundException(
+	                    "Product not found with ID: " + id
+	            ));
+
+	    // Step 1: Deactivate inventory first.
+	    // If this fails, the product remains unchanged.
+	    inventoryServiceClient.deactivateInventory(product.getSkuCode());
+
+	    // Step 2: Soft-delete the product.
+	    product.setActive(false);
+	    productRepository.save(product);
+
+	    return new ApiResponse<>(
+	            true,
+	            "Product deactivated successfully",
+	            null,
+	            null
+	    );
+	}
 
 }

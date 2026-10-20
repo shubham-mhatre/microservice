@@ -2,7 +2,9 @@ package com.sm.inventory_service.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +34,19 @@ public class InventoryController {
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
+	
+	//product service calls this endpoint when de-activating product
+	//while de-activating product also de-activate inventory
+	//based on skucode
+	//soft delete
+	@PutMapping("/sku/{skuCode}/deactivate")
+	public ResponseEntity<Void> deactivateInventory(
+	        @PathVariable String skuCode) {
+
+	    inventoryService.deactivateInventory(skuCode);
+
+	    return ResponseEntity.noContent().build();
+	}
 
 
 }

@@ -40,6 +40,9 @@ public class Product {
 	        createdAt = LocalDateTime.now();
 	    }
 	}
+	
+	@Column(nullable = false)
+	private boolean active = true;
 
 	
 	

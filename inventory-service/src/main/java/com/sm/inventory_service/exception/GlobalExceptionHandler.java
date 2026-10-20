@@ -31,6 +31,21 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.CONFLICT).body(exceptionResponse);
 	}
 	
+	@ExceptionHandler(ResourceNotFoundException.class)
+	public ResponseEntity<ExceptionResponseDto> resourceNotFoundException(DuplicateResourceException ex, HttpServletRequest req){
+		
+		ExceptionResponseDto exceptionResponse = new ExceptionResponseDto(
+				LocalDateTime.now(),
+				ex.getMessage(),
+				HttpStatus.NOT_FOUND.value(),
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
+				req.getRequestURI(),
+				Boolean.FALSE
+			);
+		
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exceptionResponse);
+	}
+	
 	@ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidation(
             MethodArgumentNotValidException ex) {
