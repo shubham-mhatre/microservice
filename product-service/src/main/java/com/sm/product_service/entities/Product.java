@@ -26,5 +26,9 @@ public class Product {
 	
 	private BigDecimal price;
 	
+	@Column(name = "sku_code")
+	private String skuCode;
+
+	
 	
 }

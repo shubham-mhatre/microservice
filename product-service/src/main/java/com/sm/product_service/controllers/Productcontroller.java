@@ -1,14 +1,16 @@
 package com.sm.product_service.controllers;
 
-import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sm.product_service.dto.request.ProductRequest;
+import com.sm.product_service.dto.response.ApiResponse;
+import com.sm.product_service.dto.response.PageResponse;
 import com.sm.product_service.dto.response.ProductResponse;
 import com.sm.product_service.services.ProductService;
 
@@ -16,19 +18,22 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api")
 public class Productcontroller {
 	
 	private final ProductService productService;
 
-	@PostMapping("/save")
-	public ResponseEntity<ProductResponse> saveProduct(@RequestBody ProductRequest request) {
-		ProductResponse productResponse= productService.saveProduct(request);
+	@PostMapping
+	public ResponseEntity<ApiResponse<ProductResponse>> saveProduct(@RequestBody ProductRequest request) {
+		ApiResponse<ProductResponse> productResponse= productService.saveProduct(request);
 		return  ResponseEntity.ok(productResponse);
 	}
 	
-	@GetMapping("/all")
-	public ResponseEntity<List<ProductResponse>> getAll(){
-		List<ProductResponse> productList=productService.getAll();
+	@GetMapping
+	public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getAll(
+			@RequestParam(defaultValue = "0") int page,
+	        @RequestParam(defaultValue = "10") int size){
+		ApiResponse<PageResponse<ProductResponse>> productList=productService.getAll(page,size);
 		return  ResponseEntity.ok(productList);
 	}
 }
