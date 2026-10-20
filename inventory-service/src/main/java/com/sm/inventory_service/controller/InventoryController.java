@@ -1,25 +1,37 @@
 package com.sm.inventory_service.controller;
 
-import java.util.List;
-
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sm.inventory_service.request.dto.InventoryRequest;
 import com.sm.inventory_service.response.dto.InventoryResponseDto;
 import com.sm.inventory_service.service.InventoryService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api")
 public class InventoryController {
-	
+
 	private final InventoryService inventoryService;
 
-	@GetMapping
-	public ResponseEntity<List<InventoryResponseDto>> isInStock(@RequestParam List<String> skuCode) {
-		return ResponseEntity.ok(inventoryService.isInStock(skuCode));
-	}
+	@PostMapping
+    public ResponseEntity<InventoryResponseDto> createInventory(
+            @Valid @RequestBody InventoryRequest request) {
+
+		InventoryResponseDto response =
+                inventoryService.createInventory(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+
 }

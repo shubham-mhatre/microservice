@@ -1,38 +1,39 @@
 package com.sm.inventory_service.service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.sm.inventory_service.entity.Inventory;
 import com.sm.inventory_service.entity.repository.InventoryRepository;
+import com.sm.inventory_service.exception.DuplicateResourceException;
+import com.sm.inventory_service.mapper.InventoryMapper;
+import com.sm.inventory_service.request.dto.InventoryRequest;
 import com.sm.inventory_service.response.dto.InventoryResponseDto;
 
-import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
 public class InventoryService {
 
 	private final InventoryRepository inventoryRepository;
 
-	public List<InventoryResponseDto> isInStock(List<String> skuCodes) {
-
-		List<Inventory> inventoryList= inventoryRepository.findBySkuCodeIn(skuCodes);
-		
-		Map<String, Inventory> inventoryMap = inventoryList.stream()
-	            .collect(Collectors.toMap(Inventory::getSkuCode, inventory -> inventory));
-
-	    // Iterate over the input skuCodes list and create response based on inventory data
-	    return skuCodes.stream()
-	            .map(skuCode -> {
-	                Inventory inventory = inventoryMap.get(skuCode);
-	                boolean isPresent = inventory != null && inventory.getQuantity() > 0;
-	                return new InventoryResponseDto(skuCode, isPresent);
-	            })
-	            .toList();
-		
+	public InventoryService(InventoryRepository inventoryRepository) {
+		this.inventoryRepository = inventoryRepository;
 	}
+
+	@Transactional
+	public InventoryResponseDto createInventory(InventoryRequest request) {
+
+		String skuCode = request.getSkuCode().trim();
+
+		if (inventoryRepository.existsBySkuCode(skuCode)) {
+			throw new DuplicateResourceException("Inventory already exists for SKU: " + skuCode);
+		}
+
+		Inventory inventory = InventoryMapper.INSTANCE.toEntity(skuCode, request);
+
+		Inventory savedInventory = inventoryRepository.save(inventory);
+
+		return new InventoryResponseDto(savedInventory.getId(), savedInventory.getSkuCode(), savedInventory.getQuantity());
+	}
+
 }
