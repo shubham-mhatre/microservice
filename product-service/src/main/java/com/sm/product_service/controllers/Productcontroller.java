@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -51,6 +52,17 @@ public class Productcontroller {
 
 	    ApiResponse<ProductResponse> response =
 	            productService.getProductBySkuCode(skuCode);
+
+	    return ResponseEntity.ok(response);
+	}
+	
+	@PutMapping("/{id}")
+	public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
+	        @PathVariable Long id,
+	        @RequestBody ProductRequest request) {
+
+	    ApiResponse<ProductResponse> response =
+	            productService.updateProduct(id, request);
 
 	    return ResponseEntity.ok(response);
 	}

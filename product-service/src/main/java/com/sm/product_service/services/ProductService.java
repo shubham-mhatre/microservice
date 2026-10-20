@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.sm.product_service.dto.request.ProductRequest;
 import com.sm.product_service.dto.response.ApiResponse;
@@ -104,6 +105,30 @@ public class ProductService {
 	    return new ApiResponse<>(
 	            true,
 	            "Product fetched successfully",
+	            response,
+	            null
+	    );
+	}
+	
+	@Transactional
+	public ApiResponse<ProductResponse> updateProduct(
+	        Long id, ProductRequest request) {
+
+	    Product product = productRepository.findById(id)
+	            .orElseThrow(() -> new ResourceNotFoundException(
+	                    "Product not found with ID: " + id
+	            ));
+
+	    ProductMapper.INSTANCE.updateProductFromRequest(request, product);
+
+	    Product updatedProduct = productRepository.save(product);
+
+	    ProductResponse response =
+	            ProductMapper.INSTANCE.mapEntityToProductResponse(updatedProduct);
+
+	    return new ApiResponse<>(
+	            true,
+	            "Product updated successfully",
 	            response,
 	            null
 	    );
