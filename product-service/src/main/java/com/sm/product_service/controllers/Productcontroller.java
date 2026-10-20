@@ -44,4 +44,14 @@ public class Productcontroller {
 
 		return ResponseEntity.ok(response);
 	}
+	
+	@GetMapping("/sku/{skuCode}")
+	public ResponseEntity<ApiResponse<ProductResponse>> getProductBySkuCode(
+	        @PathVariable String skuCode) {
+
+	    ApiResponse<ProductResponse> response =
+	            productService.getProductBySkuCode(skuCode);
+
+	    return ResponseEntity.ok(response);
+	}
 }

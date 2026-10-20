@@ -90,5 +90,23 @@ public class ProductService {
 	            null
 	    );
 	}
+	
+	public ApiResponse<ProductResponse> getProductBySkuCode(String skuCode) {
+
+	    Product product = productRepository.findBySkuCode(skuCode)
+	            .orElseThrow(() -> new ResourceNotFoundException(
+	                    "Product not found with SKU: " + skuCode
+	            ));
+
+	    ProductResponse response =
+	            ProductMapper.INSTANCE.mapEntityToProductResponse(product);
+
+	    return new ApiResponse<>(
+	            true,
+	            "Product fetched successfully",
+	            response,
+	            null
+	    );
+	}
 
 }
