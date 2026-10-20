@@ -10,13 +10,15 @@ public class ExceptionResponseDto {
 	private Integer status;
 	private String error;
 	private String path;	
+	private Boolean success;
 	
-	public ExceptionResponseDto(LocalDateTime time, String message, Integer status, String error, String path) {
+	public ExceptionResponseDto(LocalDateTime time, String message, Integer status, String error, String path,Boolean success) {
 		this.time = time;
 		this.message = message;
 		this.status = status;
 		this.error = error;
 		this.path = path;
+		this.success = success;
 	}
 	
 	
@@ -49,6 +51,16 @@ public class ExceptionResponseDto {
 	}
 	public void setPath(String path) {
 		this.path = path;
+	}
+
+
+	public Boolean getSuccess() {
+		return success;
+	}
+
+
+	public void setSuccess(Boolean success) {
+		this.success = success;
 	}
 	
 	

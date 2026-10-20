@@ -9,14 +9,16 @@ public class ExceptionResponseDto {
 	private String message;
 	private Integer status;
 	private String error;
-	private String path;	
+	private String path;
+	private Boolean success;
 	
-	public ExceptionResponseDto(LocalDateTime time, String message, Integer status, String error, String path) {
+	public ExceptionResponseDto(LocalDateTime time, String message, Integer status, String error, String path,Boolean success) {
 		this.time = time;
 		this.message = message;
 		this.status = status;
 		this.error = error;
 		this.path = path;
+		this.success = success;
 	}
 	
 	

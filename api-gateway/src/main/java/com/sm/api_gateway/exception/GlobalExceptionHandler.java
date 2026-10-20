@@ -22,7 +22,8 @@ public class GlobalExceptionHandler {
 				ex.getMessage(),
 				HttpStatus.UNAUTHORIZED.value(),
 				HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-				exchange.getRequest().getURI().toString()
+				exchange.getRequest().getURI().toString(),
+				Boolean.FALSE
 			);
 		
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(exceptionResponse);
@@ -36,7 +37,8 @@ public class GlobalExceptionHandler {
 				ex.getMessage(),
 				HttpStatus.UNAUTHORIZED.value(),
 				HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-				exchange.getRequest().getURI().toString()
+				exchange.getRequest().getURI().toString(),
+				Boolean.FALSE
 			);
 		
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(exceptionResponse);
@@ -50,7 +52,8 @@ public class GlobalExceptionHandler {
 				ex.getMessage(),
 				HttpStatus.INTERNAL_SERVER_ERROR.value(),
 				HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-				exchange.getRequest().getURI().toString()
+				exchange.getRequest().getURI().toString(),
+				Boolean.FALSE
 			);
 		
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exceptionResponse);

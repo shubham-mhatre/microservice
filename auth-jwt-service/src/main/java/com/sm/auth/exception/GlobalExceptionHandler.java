@@ -22,7 +22,8 @@ public class GlobalExceptionHandler {
 				ex.getMessage(),
 				HttpStatus.CONFLICT.value(),
 				HttpStatus.CONFLICT.getReasonPhrase(),
-				req.getRequestURI()
+				req.getRequestURI(),
+				Boolean.FALSE
 			);
 		
 		return ResponseEntity.status(HttpStatus.CONFLICT).body(exceptionResponse);
@@ -36,7 +37,8 @@ public class GlobalExceptionHandler {
 				ex.getMessage(),
 				HttpStatus.INTERNAL_SERVER_ERROR.value(),
 				HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-				req.getRequestURI()
+				req.getRequestURI(),
+				Boolean.FALSE
 			);
 		
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exceptionResponse);
