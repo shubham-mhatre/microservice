@@ -11,6 +11,7 @@ import com.sm.inventory_service.mapper.InventoryMapper;
 import com.sm.inventory_service.request.dto.InventoryRequest;
 import com.sm.inventory_service.response.dto.ApiResponse;
 import com.sm.inventory_service.response.dto.InventoryResponseDto;
+import com.sm.inventory_service.response.dto.StockAvailabilityResponse;
 
 
 @Service
@@ -72,6 +73,31 @@ public class InventoryService {
 	    return ApiResponse.success(
 	            "Inventory fetched successfully",
 	            response
+	    );
+	}
+	
+	@Transactional(readOnly = true)
+	public StockAvailabilityResponse checkStockAvailability(
+	        String skuCode,
+	        Integer requestedQuantity) {
+
+	    Inventory inventory = inventoryRepository
+	            .findBySkuCode(skuCode.trim())
+	            .orElseThrow(() ->
+	                    new ResourceNotFoundException(
+	                            "Inventory not found for SKU: " + skuCode
+	                    )
+	            );
+
+	    boolean available = inventory.isActive()
+	            && inventory.getQuantity() >= requestedQuantity;
+
+	    return new StockAvailabilityResponse(
+	            inventory.getSkuCode(),
+	            requestedQuantity,
+	            inventory.getQuantity(),
+	            inventory.isActive(),
+	            available
 	    );
 	}
 
