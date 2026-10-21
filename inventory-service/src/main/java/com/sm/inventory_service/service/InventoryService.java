@@ -127,4 +127,19 @@ public class InventoryService {
 				updatedInventory.getQuantity(), updatedInventory.isActive());
 	}
 
+	@Transactional
+	public InventoryResponseDto activateInventory(String skuCode) {
+
+		Inventory inventory = inventoryRepository.findBySkuCode(skuCode.trim())
+				.orElseThrow(() -> new ResourceNotFoundException("Inventory not found for SKU: " + skuCode));
+
+		if (!inventory.isActive()) {
+			inventory.setActive(true);
+			inventoryRepository.save(inventory);
+		}
+
+		return new InventoryResponseDto(inventory.getId(), inventory.getSkuCode(), inventory.getQuantity(),
+				inventory.isActive());
+	}
+
 }

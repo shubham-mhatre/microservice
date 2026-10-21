@@ -91,4 +91,12 @@ public class InventoryController {
 		return ResponseEntity.ok(ApiResponse.success("Stock adjusted successfully", response));
 	}
 
+	@PutMapping("/sku/{skuCode}/activate")
+	public ResponseEntity<ApiResponse<InventoryResponseDto>> activateInventory(@PathVariable String skuCode) {
+
+		InventoryResponseDto response = inventoryService.activateInventory(skuCode);
+
+		return ResponseEntity.ok(ApiResponse.success("Inventory activated successfully", response));
+	}
+
 }
