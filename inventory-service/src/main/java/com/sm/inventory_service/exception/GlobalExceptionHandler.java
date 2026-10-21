@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
 	}
 	
 	@ExceptionHandler(ResourceNotFoundException.class)
-	public ResponseEntity<ExceptionResponseDto> resourceNotFoundException(DuplicateResourceException ex, HttpServletRequest req){
+	public ResponseEntity<ExceptionResponseDto> resourceNotFoundException(ResourceNotFoundException ex, HttpServletRequest req){
 		
 		ExceptionResponseDto exceptionResponse = new ExceptionResponseDto(
 				LocalDateTime.now(),

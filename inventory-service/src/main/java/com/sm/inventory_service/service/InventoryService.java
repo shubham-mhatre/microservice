@@ -9,6 +9,7 @@ import com.sm.inventory_service.exception.DuplicateResourceException;
 import com.sm.inventory_service.exception.ResourceNotFoundException;
 import com.sm.inventory_service.mapper.InventoryMapper;
 import com.sm.inventory_service.request.dto.InventoryRequest;
+import com.sm.inventory_service.response.dto.ApiResponse;
 import com.sm.inventory_service.response.dto.InventoryResponseDto;
 
 
@@ -34,7 +35,7 @@ public class InventoryService {
 
 		Inventory savedInventory = inventoryRepository.save(inventory);
 
-		return new InventoryResponseDto(savedInventory.getId(), savedInventory.getSkuCode(), savedInventory.getQuantity());
+		return new InventoryResponseDto(savedInventory.getId(), savedInventory.getSkuCode(), savedInventory.getQuantity(), false);
 	}
 	
 	@Transactional
@@ -48,6 +49,30 @@ public class InventoryService {
 	    inventory.setActive(false);
 
 	    inventoryRepository.save(inventory);
+	}
+	
+	public ApiResponse<InventoryResponseDto> getInventoryBySkuCode(
+	        String skuCode) {
+
+	    Inventory inventory = inventoryRepository
+	            .findBySkuCode(skuCode.trim())
+	            .orElseThrow(() ->
+	                    new ResourceNotFoundException(
+	                            "Inventory not found for SKU: " + skuCode
+	                    )
+	            );
+
+	    InventoryResponseDto response = new InventoryResponseDto(
+	            inventory.getId(),
+	            inventory.getSkuCode(),
+	            inventory.getQuantity(),
+	            inventory.isActive()
+	    );
+
+	    return ApiResponse.success(
+	            "Inventory fetched successfully",
+	            response
+	    );
 	}
 
 }
