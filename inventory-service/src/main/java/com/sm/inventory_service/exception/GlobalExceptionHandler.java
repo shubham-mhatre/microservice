@@ -114,6 +114,40 @@ public class GlobalExceptionHandler {
 	            .body(response);
 	}
 	
+	@ExceptionHandler(InvalidStockAdjustmentException.class)
+	public ResponseEntity<ExceptionResponseDto> handleInvalidStockAdjustment(
+	        InvalidStockAdjustmentException ex,
+	        HttpServletRequest req) {
+
+	    ExceptionResponseDto response = new ExceptionResponseDto(
+	            LocalDateTime.now(),
+	            ex.getMessage(),
+	            HttpStatus.BAD_REQUEST.value(),
+	            HttpStatus.BAD_REQUEST.getReasonPhrase(),
+	            req.getRequestURI(),
+	            Boolean.FALSE
+	    );
+
+	    return ResponseEntity.badRequest().body(response);
+	}
+	
+	@ExceptionHandler(InsufficientStockException.class)
+	public ResponseEntity<ExceptionResponseDto> handleInsufficientStock(
+	        InsufficientStockException ex,
+	        HttpServletRequest req) {
+
+	    ExceptionResponseDto response = new ExceptionResponseDto(
+	            LocalDateTime.now(),
+	            ex.getMessage(),
+	            HttpStatus.CONFLICT.value(),
+	            HttpStatus.CONFLICT.getReasonPhrase(),
+	            req.getRequestURI(),
+	            Boolean.FALSE
+	    );
+
+	    return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+	}
+	
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ExceptionResponseDto> handleGenericException(Exception ex, HttpServletRequest req){
 		

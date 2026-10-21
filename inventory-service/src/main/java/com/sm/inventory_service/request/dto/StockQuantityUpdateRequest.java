@@ -1,4 +1,4 @@
-package com.sm.inventory_service.response.dto;
+package com.sm.inventory_service.request.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

@@ -14,10 +14,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sm.inventory_service.request.dto.InventoryRequest;
+import com.sm.inventory_service.request.dto.StockAdjustmentRequest;
+import com.sm.inventory_service.request.dto.StockQuantityUpdateRequest;
 import com.sm.inventory_service.response.dto.ApiResponse;
 import com.sm.inventory_service.response.dto.InventoryResponseDto;
 import com.sm.inventory_service.response.dto.StockAvailabilityResponse;
-import com.sm.inventory_service.response.dto.StockQuantityUpdateRequest;
 import com.sm.inventory_service.service.InventoryService;
 
 import jakarta.validation.Valid;
@@ -33,82 +34,61 @@ public class InventoryController {
 	private final InventoryService inventoryService;
 
 	@PostMapping
-    public ResponseEntity<ApiResponse<InventoryResponseDto>> createInventory(
-            @Valid @RequestBody InventoryRequest request) {
+	public ResponseEntity<ApiResponse<InventoryResponseDto>> createInventory(
+			@Valid @RequestBody InventoryRequest request) {
 
-		InventoryResponseDto response =
-                inventoryService.createInventory(request);
-		
-		ApiResponse<InventoryResponseDto> apiResponse =
-	            ApiResponse.success(
-	                    "Inventory created successfully",
-	                    response
-	            );
+		InventoryResponseDto response = inventoryService.createInventory(request);
 
-		return ResponseEntity
-	            .status(HttpStatus.CREATED)
-	            .body(apiResponse);
-    }
-	
-	//product service calls this endpoint when de-activating product
-	//while de-activating product also de-activate inventory
-	//based on skucode
-	//soft delete
+		ApiResponse<InventoryResponseDto> apiResponse = ApiResponse.success("Inventory created successfully", response);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
+	}
+
+	// product service calls this endpoint when de-activating product
+	// while de-activating product also de-activate inventory
+	// based on skucode
+	// soft delete
 	@PutMapping("/sku/{skuCode}/deactivate")
-	public ResponseEntity<Void> deactivateInventory(
-	        @PathVariable String skuCode) {
+	public ResponseEntity<Void> deactivateInventory(@PathVariable String skuCode) {
 
-	    inventoryService.deactivateInventory(skuCode);
+		inventoryService.deactivateInventory(skuCode);
 
-	    return ResponseEntity.noContent().build();
+		return ResponseEntity.noContent().build();
 	}
-	
+
 	@GetMapping("/sku/{skuCode}")
-	public ResponseEntity<ApiResponse<InventoryResponseDto>> getInventoryBySkuCode(
-	        @PathVariable String skuCode) {
+	public ResponseEntity<ApiResponse<InventoryResponseDto>> getInventoryBySkuCode(@PathVariable String skuCode) {
 
-	    ApiResponse<InventoryResponseDto> response =
-	            inventoryService.getInventoryBySkuCode(skuCode);
+		ApiResponse<InventoryResponseDto> response = inventoryService.getInventoryBySkuCode(skuCode);
 
-	    return ResponseEntity.ok(response);
+		return ResponseEntity.ok(response);
 	}
-	
+
 	@GetMapping("/sku/{skuCode}/availability")
-	public ResponseEntity<ApiResponse<StockAvailabilityResponse>>
-	        checkStockAvailability(
-	                @PathVariable String skuCode,
-	                @RequestParam @Min(1) Integer quantity) {
+	public ResponseEntity<ApiResponse<StockAvailabilityResponse>> checkStockAvailability(@PathVariable String skuCode,
+			@RequestParam @Min(1) Integer quantity) {
 
-	    StockAvailabilityResponse response =
-	            inventoryService.checkStockAvailability(
-	                    skuCode, quantity
-	            );
+		StockAvailabilityResponse response = inventoryService.checkStockAvailability(skuCode, quantity);
 
-	    return ResponseEntity.ok(
-	            ApiResponse.success(
-	                    "Stock availability checked successfully",
-	                    response
-	            )
-	    );
+		return ResponseEntity.ok(ApiResponse.success("Stock availability checked successfully", response));
 	}
-	
+
 	@PatchMapping("/sku/{skuCode}/quantity")
-	public ResponseEntity<ApiResponse<InventoryResponseDto>> updateStockQuantity(
-	        @PathVariable String skuCode,
-	        @Valid @RequestBody StockQuantityUpdateRequest request) {
+	public ResponseEntity<ApiResponse<InventoryResponseDto>> updateStockQuantity(@PathVariable String skuCode,
+			@Valid @RequestBody StockQuantityUpdateRequest request) {
 
-		InventoryResponseDto response = inventoryService.updateStockQuantity(
-	            skuCode,
-	            request.quantity()
-	    );
+		InventoryResponseDto response = inventoryService.updateStockQuantity(skuCode, request.quantity());
 
-	    return ResponseEntity.ok(
-	            ApiResponse.success(
-	                    "Stock quantity updated successfully",
-	                    response
-	            )
-	    );
+		return ResponseEntity.ok(ApiResponse.success("Stock quantity updated successfully", response));
 	}
 
+	@PatchMapping("/sku/{skuCode}/adjust")
+	public ResponseEntity<ApiResponse<InventoryResponseDto>> adjustStock(@PathVariable String skuCode,
+			@Valid @RequestBody StockAdjustmentRequest request) {
+
+		InventoryResponseDto response = inventoryService.adjustStock(skuCode, request.adjustment());
+
+		return ResponseEntity.ok(ApiResponse.success("Stock adjusted successfully", response));
+	}
 
 }
