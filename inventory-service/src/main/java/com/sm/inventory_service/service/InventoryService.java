@@ -1,5 +1,11 @@
 package com.sm.inventory_service.service;
 
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +20,7 @@ import com.sm.inventory_service.mapper.InventoryMapper;
 import com.sm.inventory_service.request.dto.InventoryRequest;
 import com.sm.inventory_service.response.dto.ApiResponse;
 import com.sm.inventory_service.response.dto.InventoryResponseDto;
+import com.sm.inventory_service.response.dto.PageResponse;
 import com.sm.inventory_service.response.dto.StockAvailabilityResponse;
 
 @Service
@@ -140,6 +147,25 @@ public class InventoryService {
 
 		return new InventoryResponseDto(inventory.getId(), inventory.getSkuCode(), inventory.getQuantity(),
 				inventory.isActive());
+	}
+
+	@Transactional(readOnly = true)
+	public PageResponse<InventoryResponseDto> getAllInventory(int page, int size, String sortBy, String direction) {
+
+		Sort.Direction sortDirection = Sort.Direction.fromString(direction);
+
+		Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+
+		Page<Inventory> inventoryPage = inventoryRepository.findAll(pageable);
+
+		List<InventoryResponseDto> inventoryResponses = inventoryPage.getContent().stream()
+				.map(inventory -> new InventoryResponseDto(inventory.getId(), inventory.getSkuCode(),
+						inventory.getQuantity(), inventory.isActive()))
+				.toList();
+
+		return new PageResponse<>(inventoryResponses, inventoryPage.getNumber(), inventoryPage.getSize(),
+				inventoryPage.getTotalElements(), inventoryPage.getTotalPages(), inventoryPage.isFirst(),
+				inventoryPage.isLast());
 	}
 
 }

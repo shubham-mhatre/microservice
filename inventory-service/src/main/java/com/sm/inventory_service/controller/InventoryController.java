@@ -1,5 +1,7 @@
 package com.sm.inventory_service.controller;
 
+import java.util.Set;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -13,11 +15,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sm.inventory_service.exception.InvalidRequestStateException;
 import com.sm.inventory_service.request.dto.InventoryRequest;
 import com.sm.inventory_service.request.dto.StockAdjustmentRequest;
 import com.sm.inventory_service.request.dto.StockQuantityUpdateRequest;
 import com.sm.inventory_service.response.dto.ApiResponse;
 import com.sm.inventory_service.response.dto.InventoryResponseDto;
+import com.sm.inventory_service.response.dto.PageResponse;
 import com.sm.inventory_service.response.dto.StockAvailabilityResponse;
 import com.sm.inventory_service.service.InventoryService;
 
@@ -97,6 +101,25 @@ public class InventoryController {
 		InventoryResponseDto response = inventoryService.activateInventory(skuCode);
 
 		return ResponseEntity.ok(ApiResponse.success("Inventory activated successfully", response));
+	}
+
+	@GetMapping
+	public ResponseEntity<ApiResponse<PageResponse<InventoryResponseDto>>> getAllInventory(
+			@RequestParam(defaultValue = "0") @Min(0) int page, @RequestParam(defaultValue = "10") @Min(1) int size,
+			@RequestParam(defaultValue = "id") String sortBy, @RequestParam(defaultValue = "asc") String direction) {
+
+		// Restrict sorting to known entity properties.
+		if (!Set.of("id", "skuCode", "quantity", "active").contains(sortBy)) {
+			throw new InvalidRequestStateException("Invalid sortBy field. Allowed fields: id, skuCode, quantity, active");
+		}
+
+		if (!direction.equalsIgnoreCase("asc") && !direction.equalsIgnoreCase("desc")) {
+			throw new InvalidRequestStateException("Invalid direction. Allowed values: asc, desc");
+		}
+
+		PageResponse<InventoryResponseDto> response = inventoryService.getAllInventory(page, size, sortBy, direction);
+
+		return ResponseEntity.ok(ApiResponse.success("Inventory fetched successfully", response));
 	}
 
 }
