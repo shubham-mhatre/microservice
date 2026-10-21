@@ -37,6 +37,12 @@ public class InventoryController {
 
 	private final InventoryService inventoryService;
 
+	/**
+	 * Creates a new inventory record for the given SKU.
+	 *
+	 * @param request inventory details, including SKU code and initial quantity
+	 * @return HTTP 201 Created with the created inventory details
+	 */
 	@PostMapping
 	public ResponseEntity<ApiResponse<InventoryResponseDto>> createInventory(
 			@Valid @RequestBody InventoryRequest request) {
@@ -48,10 +54,13 @@ public class InventoryController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
 	}
 
-	// product service calls this endpoint when de-activating product
-	// while de-activating product also de-activate inventory
-	// based on skucode
-	// soft delete
+	/**
+	 * Deactivates inventory for the specified SKU without deleting the record.
+	 * Used by Product Service when a product is deactivated.
+	 *
+	 * @param skuCode SKU code of the inventory to deactivate
+	 * @return HTTP 204 No Content on successful deactivation
+	 */
 	@PutMapping("/sku/{skuCode}/deactivate")
 	public ResponseEntity<Void> deactivateInventory(@PathVariable String skuCode) {
 
@@ -60,6 +69,12 @@ public class InventoryController {
 		return ResponseEntity.noContent().build();
 	}
 
+	/**
+	 * Retrieves inventory details for the specified SKU.
+	 *
+	 * @param skuCode SKU code to look up
+	 * @return HTTP 200 OK with the inventory details
+	 */
 	@GetMapping("/sku/{skuCode}")
 	public ResponseEntity<ApiResponse<InventoryResponseDto>> getInventoryBySkuCode(@PathVariable String skuCode) {
 
@@ -68,6 +83,13 @@ public class InventoryController {
 		return ResponseEntity.ok(response);
 	}
 
+	/**
+	 * Checks whether the requested quantity is available for the specified SKU.
+	 *
+	 * @param skuCode SKU code to check
+	 * @param quantity requested quantity; must be at least 1
+	 * @return HTTP 200 OK with stock availability details
+	 */
 	@GetMapping("/sku/{skuCode}/availability")
 	public ResponseEntity<ApiResponse<StockAvailabilityResponse>> checkStockAvailability(@PathVariable String skuCode,
 			@RequestParam @Min(1) Integer quantity) {
@@ -77,6 +99,13 @@ public class InventoryController {
 		return ResponseEntity.ok(ApiResponse.success("Stock availability checked successfully", response));
 	}
 
+	/**
+	 * Sets the stock quantity for the specified SKU to an exact value.
+	 *
+	 * @param skuCode SKU code whose stock quantity will be updated
+	 * @param request new stock quantity; must not be negative
+	 * @return HTTP 200 OK with the updated inventory details
+	 */
 	@PatchMapping("/sku/{skuCode}/quantity")
 	public ResponseEntity<ApiResponse<InventoryResponseDto>> updateStockQuantity(@PathVariable String skuCode,
 			@Valid @RequestBody StockQuantityUpdateRequest request) {
@@ -86,6 +115,13 @@ public class InventoryController {
 		return ResponseEntity.ok(ApiResponse.success("Stock quantity updated successfully", response));
 	}
 
+	/**
+	 * Increases or decreases stock by the specified adjustment amount.
+	 *
+	 * @param skuCode SKU code whose stock will be adjusted
+	 * @param request stock adjustment; positive to increase and negative to decrease
+	 * @return HTTP 200 OK with the updated inventory details
+	 */
 	@PatchMapping("/sku/{skuCode}/adjust")
 	public ResponseEntity<ApiResponse<InventoryResponseDto>> adjustStock(@PathVariable String skuCode,
 			@Valid @RequestBody StockAdjustmentRequest request) {
@@ -95,6 +131,12 @@ public class InventoryController {
 		return ResponseEntity.ok(ApiResponse.success("Stock adjusted successfully", response));
 	}
 
+	/**
+	 * Activates inventory for the specified SKU without changing its quantity.
+	 *
+	 * @param skuCode SKU code of the inventory to activate
+	 * @return HTTP 200 OK with the updated inventory details
+	 */
 	@PutMapping("/sku/{skuCode}/activate")
 	public ResponseEntity<ApiResponse<InventoryResponseDto>> activateInventory(@PathVariable String skuCode) {
 
@@ -103,6 +145,15 @@ public class InventoryController {
 		return ResponseEntity.ok(ApiResponse.success("Inventory activated successfully", response));
 	}
 
+	/**
+	 * Retrieves a paginated list of inventory records with configurable sorting.
+	 *
+	 * @param page zero-based page number
+	 * @param size number of records per page
+	 * @param sortBy inventory field used for sorting
+	 * @param direction sort direction: asc or desc
+	 * @return HTTP 200 OK with paginated inventory details
+	 */
 	@GetMapping
 	public ResponseEntity<ApiResponse<PageResponse<InventoryResponseDto>>> getAllInventory(
 			@RequestParam(defaultValue = "0") @Min(0) int page, @RequestParam(defaultValue = "10") @Min(1) int size,
