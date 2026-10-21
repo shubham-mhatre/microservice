@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.sm.inventory_service.entity.Inventory;
 import com.sm.inventory_service.entity.repository.InventoryRepository;
 import com.sm.inventory_service.exception.DuplicateResourceException;
+import com.sm.inventory_service.exception.InactiveInventoryException;
 import com.sm.inventory_service.exception.ResourceNotFoundException;
 import com.sm.inventory_service.mapper.InventoryMapper;
 import com.sm.inventory_service.request.dto.InventoryRequest;
@@ -98,6 +99,37 @@ public class InventoryService {
 	            inventory.getQuantity(),
 	            inventory.isActive(),
 	            available
+	    );
+	}
+	
+	@Transactional
+	public InventoryResponseDto updateStockQuantity(
+	        String skuCode,
+	        Integer quantity) {
+
+	    Inventory inventory = inventoryRepository
+	            .findBySkuCode(skuCode.trim())
+	            .orElseThrow(() ->
+	                    new ResourceNotFoundException(
+	                            "Inventory not found for SKU: " + skuCode
+	                    )
+	            );
+
+	    if (!inventory.isActive()) {
+	        throw new InactiveInventoryException(
+	                "Cannot update stock for inactive inventory: " + skuCode
+	        );
+	    }
+
+	    inventory.setQuantity(quantity);
+
+	    Inventory updatedInventory = inventoryRepository.save(inventory);
+
+	    return new InventoryResponseDto(
+	            updatedInventory.getId(),
+	            updatedInventory.getSkuCode(),
+	            updatedInventory.getQuantity(),
+	            updatedInventory.isActive()
 	    );
 	}
 

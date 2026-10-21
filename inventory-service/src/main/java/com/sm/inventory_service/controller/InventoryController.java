@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -16,6 +17,7 @@ import com.sm.inventory_service.request.dto.InventoryRequest;
 import com.sm.inventory_service.response.dto.ApiResponse;
 import com.sm.inventory_service.response.dto.InventoryResponseDto;
 import com.sm.inventory_service.response.dto.StockAvailabilityResponse;
+import com.sm.inventory_service.response.dto.StockQuantityUpdateRequest;
 import com.sm.inventory_service.service.InventoryService;
 
 import jakarta.validation.Valid;
@@ -85,6 +87,24 @@ public class InventoryController {
 	    return ResponseEntity.ok(
 	            ApiResponse.success(
 	                    "Stock availability checked successfully",
+	                    response
+	            )
+	    );
+	}
+	
+	@PatchMapping("/sku/{skuCode}/quantity")
+	public ResponseEntity<ApiResponse<InventoryResponseDto>> updateStockQuantity(
+	        @PathVariable String skuCode,
+	        @Valid @RequestBody StockQuantityUpdateRequest request) {
+
+		InventoryResponseDto response = inventoryService.updateStockQuantity(
+	            skuCode,
+	            request.quantity()
+	    );
+
+	    return ResponseEntity.ok(
+	            ApiResponse.success(
+	                    "Stock quantity updated successfully",
 	                    response
 	            )
 	    );
