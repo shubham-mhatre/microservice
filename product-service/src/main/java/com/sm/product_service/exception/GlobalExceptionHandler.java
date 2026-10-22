@@ -64,6 +64,25 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exceptionResponse);
 	}
 	
+	@ExceptionHandler(ServiceDownException.class)
+	public ResponseEntity<ExceptionResponseDto> handleServiceDownException(
+			ServiceDownException ex,
+	        HttpServletRequest request) {
+
+	    ExceptionResponseDto response = new ExceptionResponseDto(
+	            LocalDateTime.now(),
+	            ex.getMessage(),
+	            HttpStatus.SERVICE_UNAVAILABLE.value(),
+	            HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
+	            request.getRequestURI(),
+	            false
+	    );
+
+	    return ResponseEntity
+	            .status(HttpStatus.SERVICE_UNAVAILABLE)
+	            .body(response);
+	}
+	
 	private String extractErrorMessage(HttpStatusCodeException ex) {
 	    try {
 	        com.fasterxml.jackson.databind.JsonNode jsonNode =

@@ -22,140 +22,90 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class ProductService {
-	
+
 	private final ProductRepository productRepository;
 	private final InventoryServiceClient inventoryServiceClient;
-	
+
+	@Transactional
 	public ApiResponse<ProductResponse> saveProduct(ProductRequest request) {
+
 		Product product = ProductMapper.INSTANCE.mapProductRequestToEntity(request);
+
 		Product savedProduct = productRepository.save(product);
-		
+
 		inventoryServiceClient.createInventory(savedProduct.getSkuCode());
-		
-		ProductResponse productResponse =
-	            ProductMapper.INSTANCE.mapEntityToProductResponse(savedProduct);
 
-	    return new ApiResponse<>(
-	            true,
-	            "Product created successfully",
-	            productResponse,
-	            null
-	    );
+		ProductResponse productResponse = ProductMapper.INSTANCE.mapEntityToProductResponse(savedProduct);
+
+		return new ApiResponse<>(true, "Product created successfully", productResponse, null);
 	}
 
-	public ApiResponse<PageResponse<ProductResponse>> getAll(
-	        int page, int size) {
+	public ApiResponse<PageResponse<ProductResponse>> getAll(int page, int size) {
 
-	    Pageable pageable = PageRequest.of(page, size);
+		Pageable pageable = PageRequest.of(page, size);
 
-	    Page<Product> productPage = productRepository.findAll(pageable);
+		Page<Product> productPage = productRepository.findAll(pageable);
 
-	    List<ProductResponse> products = productPage.getContent()
-	            .stream()
-	            .map(ProductMapper.INSTANCE::mapEntityToProductResponse)
-	            .toList();
+		List<ProductResponse> products = productPage.getContent().stream()
+				.map(ProductMapper.INSTANCE::mapEntityToProductResponse).toList();
 
-	    PageResponse<ProductResponse> pageResponse =
-	            new PageResponse<>(
-	                    products,
-	                    productPage.getNumber(),
-	                    productPage.getSize(),
-	                    productPage.getTotalElements(),
-	                    productPage.getTotalPages(),
-	                    productPage.hasNext(),
-	                    productPage.hasPrevious()
-	            );
+		PageResponse<ProductResponse> pageResponse = new PageResponse<>(products, productPage.getNumber(),
+				productPage.getSize(), productPage.getTotalElements(), productPage.getTotalPages(),
+				productPage.hasNext(), productPage.hasPrevious());
 
-	    return ApiResponse.success(
-	            "Products retrieved successfully",
-	            pageResponse
-	    );
+		return ApiResponse.success("Products retrieved successfully", pageResponse);
 	}
-	
+
 	public ApiResponse<ProductResponse> getProductById(Long id) {
 
-	    Product product = productRepository.findById(id)
-	            .orElseThrow(() ->
-	                    new ResourceNotFoundException(
-	                            "Product not found with ID: " + id
-	                    )
-	            );
+		Product product = productRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + id));
 
-	    ProductResponse response =
-	            ProductMapper.INSTANCE.mapEntityToProductResponse(product);
+		ProductResponse response = ProductMapper.INSTANCE.mapEntityToProductResponse(product);
 
-	    return new ApiResponse<>(
-	            true,
-	            "Product fetched successfully",
-	            response,
-	            null
-	    );
+		return new ApiResponse<>(true, "Product fetched successfully", response, null);
 	}
-	
+
 	public ApiResponse<ProductResponse> getProductBySkuCode(String skuCode) {
 
-	    Product product = productRepository.findBySkuCode(skuCode)
-	            .orElseThrow(() -> new ResourceNotFoundException(
-	                    "Product not found with SKU: " + skuCode
-	            ));
+		Product product = productRepository.findBySkuCode(skuCode)
+				.orElseThrow(() -> new ResourceNotFoundException("Product not found with SKU: " + skuCode));
 
-	    ProductResponse response =
-	            ProductMapper.INSTANCE.mapEntityToProductResponse(product);
+		ProductResponse response = ProductMapper.INSTANCE.mapEntityToProductResponse(product);
 
-	    return new ApiResponse<>(
-	            true,
-	            "Product fetched successfully",
-	            response,
-	            null
-	    );
+		return new ApiResponse<>(true, "Product fetched successfully", response, null);
 	}
-	
+
 	@Transactional
-	public ApiResponse<ProductResponse> updateProduct(
-	        Long id, ProductRequest request) {
+	public ApiResponse<ProductResponse> updateProduct(Long id, ProductRequest request) {
 
-	    Product product = productRepository.findById(id)
-	            .orElseThrow(() -> new ResourceNotFoundException(
-	                    "Product not found with ID: " + id
-	            ));
+		Product product = productRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + id));
 
-	    ProductMapper.INSTANCE.updateProductFromRequest(request, product);
+		ProductMapper.INSTANCE.updateProductFromRequest(request, product);
 
-	    Product updatedProduct = productRepository.save(product);
+		Product updatedProduct = productRepository.save(product);
 
-	    ProductResponse response =
-	            ProductMapper.INSTANCE.mapEntityToProductResponse(updatedProduct);
+		ProductResponse response = ProductMapper.INSTANCE.mapEntityToProductResponse(updatedProduct);
 
-	    return new ApiResponse<>(
-	            true,
-	            "Product updated successfully",
-	            response,
-	            null
-	    );
+		return new ApiResponse<>(true, "Product updated successfully", response, null);
 	}
-	
+
 	@Transactional
 	public ApiResponse<Void> deleteProduct(Long id) {
 
-	    Product product = productRepository.findById(id)
-	            .orElseThrow(() -> new ResourceNotFoundException(
-	                    "Product not found with ID: " + id
-	            ));
+		Product product = productRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + id));
 
-	    // Step 1: Deactivate inventory first.
-	    // If this fails, the product remains unchanged.
-	    inventoryServiceClient.deactivateInventory(product.getSkuCode());
+		// Step 1: Deactivate inventory first.
+		// If this fails, the product remains unchanged.
+		inventoryServiceClient.deactivateInventory(product.getSkuCode());
 
-	    // Step 2: Soft-delete the product.
-	    product.setActive(false);
-	    productRepository.save(product);
+		// Step 2: Soft-delete the product.
+		product.setActive(false);
+		productRepository.save(product);
 
-	    return new ApiResponse<>(
-	            true,
-	            "Product deactivated successfully",
-	            null,
-	            null
-	    );
+		return new ApiResponse<>(true, "Product deactivated successfully", null, null);
 	}
 
 }
