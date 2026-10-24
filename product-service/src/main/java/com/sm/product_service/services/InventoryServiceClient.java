@@ -26,7 +26,7 @@ public class InventoryServiceClient {
 
 		InventoryRequest request = new InventoryRequest(skuCode, 0);
 
-		String url = inventoryServiceUrl + "inventory/api";
+		String url = inventoryServiceUrl + "api";
 
 		try {
             restTemplate.postForEntity(
