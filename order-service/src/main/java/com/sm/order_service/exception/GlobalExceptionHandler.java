@@ -28,5 +28,56 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exceptionResponse);
 	}
 	
+	@ExceptionHandler(InvalidRequestStateException.class)
+	public ResponseEntity<ExceptionResponseDto> handleInvalidRequestStateException(
+			InvalidRequestStateException ex,
+	        HttpServletRequest req) {
+
+	    ExceptionResponseDto response = new ExceptionResponseDto(
+	            LocalDateTime.now(),
+	            ex.getMessage(),
+	            HttpStatus.CONFLICT.value(),
+	            HttpStatus.CONFLICT.getReasonPhrase(),
+	            req.getRequestURI(),
+	            Boolean.FALSE
+	    );
+
+	    return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+	}
+	
+	@ExceptionHandler(ServiceDownException.class)
+	public ResponseEntity<ExceptionResponseDto> handleServiceDownException(
+			ServiceDownException ex,
+	        HttpServletRequest request) {
+
+	    ExceptionResponseDto response = new ExceptionResponseDto(
+	            LocalDateTime.now(),
+	            ex.getMessage(),
+	            HttpStatus.SERVICE_UNAVAILABLE.value(),
+	            HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
+	            request.getRequestURI(),
+	            false
+	    );
+
+	    return ResponseEntity
+	            .status(HttpStatus.SERVICE_UNAVAILABLE)
+	            .body(response);
+	}
+	
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<ExceptionResponseDto> handleGenericException(Exception ex, HttpServletRequest req){
+		
+		ExceptionResponseDto exceptionResponse = new ExceptionResponseDto(
+				LocalDateTime.now(),
+				ex.getMessage(),
+				HttpStatus.INTERNAL_SERVER_ERROR.value(),
+				HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+				req.getRequestURI(),
+				Boolean.FALSE
+			);
+		
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exceptionResponse);
+	}
+	
 	
 }

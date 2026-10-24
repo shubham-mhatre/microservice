@@ -148,6 +148,23 @@ public class GlobalExceptionHandler {
 	    return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
 	}
 	
+	@ExceptionHandler(InvalidRequestStateException.class)
+	public ResponseEntity<ExceptionResponseDto> handleInvalidRequestStateException(
+			InvalidRequestStateException ex,
+	        HttpServletRequest req) {
+
+	    ExceptionResponseDto response = new ExceptionResponseDto(
+	            LocalDateTime.now(),
+	            ex.getMessage(),
+	            HttpStatus.CONFLICT.value(),
+	            HttpStatus.CONFLICT.getReasonPhrase(),
+	            req.getRequestURI(),
+	            Boolean.FALSE
+	    );
+
+	    return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+	}
+	
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ExceptionResponseDto> handleGenericException(Exception ex, HttpServletRequest req){
 		
