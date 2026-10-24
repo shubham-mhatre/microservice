@@ -14,6 +14,7 @@ import com.sm.inventory_service.entity.repository.InventoryRepository;
 import com.sm.inventory_service.exception.DuplicateResourceException;
 import com.sm.inventory_service.exception.InactiveInventoryException;
 import com.sm.inventory_service.exception.InsufficientStockException;
+import com.sm.inventory_service.exception.InvalidRequestStateException;
 import com.sm.inventory_service.exception.InvalidStockAdjustmentException;
 import com.sm.inventory_service.exception.ResourceNotFoundException;
 import com.sm.inventory_service.mapper.InventoryMapper;
@@ -166,6 +167,35 @@ public class InventoryService {
 		return new PageResponse<>(inventoryResponses, inventoryPage.getNumber(), inventoryPage.getSize(),
 				inventoryPage.getTotalElements(), inventoryPage.getTotalPages(), inventoryPage.isFirst(),
 				inventoryPage.isLast());
+	}
+
+	@Transactional
+	public void reserveStock(String skuCode, Integer quantity) {
+
+		int updatedRows = inventoryRepository.reserveStock(skuCode, quantity);
+
+		if (updatedRows == 1) {
+			return;
+		}
+
+		Inventory inventory = inventoryRepository.findBySkuCode(skuCode)
+				.orElseThrow(() -> new ResourceNotFoundException("Inventory not found for SKU: " + skuCode));
+
+		if (!inventory.isActive()) {
+			throw new InvalidRequestStateException("Inventory is inactive for SKU: " + skuCode);
+		}
+
+		throw new InvalidRequestStateException("Insufficient stock for SKU: " + skuCode);
+	}
+
+	@Transactional
+	public void releaseStock(String skuCode, Integer quantity) {
+
+		int updatedRows = inventoryRepository.releaseStock(skuCode, quantity);
+
+		if (updatedRows == 0) {
+			throw new ResourceNotFoundException("Inventory not found or quantity is unavailable for SKU: " + skuCode);
+		}
 	}
 
 }

@@ -19,6 +19,7 @@ import com.sm.inventory_service.exception.InvalidRequestStateException;
 import com.sm.inventory_service.request.dto.InventoryRequest;
 import com.sm.inventory_service.request.dto.StockAdjustmentRequest;
 import com.sm.inventory_service.request.dto.StockQuantityUpdateRequest;
+import com.sm.inventory_service.request.dto.StockReservationRequest;
 import com.sm.inventory_service.response.dto.ApiResponse;
 import com.sm.inventory_service.response.dto.InventoryResponseDto;
 import com.sm.inventory_service.response.dto.PageResponse;
@@ -171,6 +172,32 @@ public class InventoryController {
 		PageResponse<InventoryResponseDto> response = inventoryService.getAllInventory(page, size, sortBy, direction);
 
 		return ResponseEntity.ok(ApiResponse.success("Inventory fetched successfully", response));
+	}
+	
+	/**
+	 * Reserves stock for order processing.
+	 */
+	@PostMapping("/sku/{skuCode}/reserve")
+	public ResponseEntity<Void> reserveStock(
+	        @PathVariable String skuCode,
+	        @Valid @RequestBody StockReservationRequest request) {
+
+	    inventoryService.reserveStock(skuCode, request.quantity());
+
+	    return ResponseEntity.noContent().build();
+	}
+
+	/**
+	 * Releases previously reserved stock.
+	 */
+	@PostMapping("/sku/{skuCode}/release")
+	public ResponseEntity<Void> releaseStock(
+	        @PathVariable String skuCode,
+	        @Valid @RequestBody StockReservationRequest request) {
+
+	    inventoryService.releaseStock(skuCode, request.quantity());
+
+	    return ResponseEntity.noContent().build();
 	}
 
 }
