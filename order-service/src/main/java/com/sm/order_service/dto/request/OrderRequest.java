@@ -1,15 +1,39 @@
+
 package com.sm.order_service.dto.request;
 
 import java.util.List;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+
 public class OrderRequest {
 
-	List<OrderLineItemsDto> orderLineItems;
+    @NotNull
+    @Positive
+    private Integer userId;
+
+    @NotEmpty
+    @Valid
+    private List<OrderItemRequest> items;
+
+	public Integer getUserId() {
+		return userId;
+	}
+
+	public void setUserId(Integer userId) {
+		this.userId = userId;
+	}
+
+	public List<OrderItemRequest> getItems() {
+		return items;
+	}
+
+	public void setItems(List<OrderItemRequest> items) {
+		this.items = items;
+	}
+    
+    
 }
