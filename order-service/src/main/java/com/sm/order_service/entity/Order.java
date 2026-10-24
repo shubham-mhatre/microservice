@@ -59,6 +59,11 @@ public class Order {
         fetch = FetchType.LAZY
     )
     private List<OrderLineItem> orderLineItems = new ArrayList<>();
+    
+    public void addOrderLineItem(OrderLineItem lineItem) {
+        orderLineItems.add(lineItem);
+        lineItem.setOrder(this);
+    }
 
 	public Integer getId() {
 		return id;

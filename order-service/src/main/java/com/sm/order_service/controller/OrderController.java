@@ -21,12 +21,6 @@ import lombok.RequiredArgsConstructor;
 public class OrderController {
 	
 	private final OrderService orderService;
-
-	@PostMapping("/place")
-	public ResponseEntity<String> placeOrder(@RequestBody OrderRequest orderRequest) {
-		String orderSummary= orderService.placeOrder(orderRequest);
-		return ResponseEntity.ok(orderSummary);
-	}
 	
 	@GetMapping("/{id}")
     public ResponseEntity<ApiResponse<OrderResponse>> getOrderById(
