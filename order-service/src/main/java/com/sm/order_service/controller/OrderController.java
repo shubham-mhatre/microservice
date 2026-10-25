@@ -15,6 +15,7 @@ import com.sm.order_service.dto.request.OrderRequest;
 import com.sm.order_service.dto.request.UpdateOrderStatusRequest;
 import com.sm.order_service.dto.response.ApiResponse;
 import com.sm.order_service.dto.response.OrderResponse;
+import com.sm.order_service.dto.response.OrderStatusResponse;
 import com.sm.order_service.dto.response.PageResponse;
 import com.sm.order_service.services.OrderService;
 
@@ -74,4 +75,19 @@ public class OrderController {
 
 		return ResponseEntity.ok(ApiResponse.success("Order status updated successfully", response));
 	}
+
+	/**
+	 * Retrieves the current status of an order.
+	 *
+	 * @param id the ID of the order
+	 * @return the current order status
+	 */
+	@GetMapping("/{id}/status")
+	public ResponseEntity<ApiResponse<OrderStatusResponse>> getOrderStatus(@PathVariable Integer id) {
+
+		OrderStatusResponse response = orderService.getOrderStatus(id);
+
+		return ResponseEntity.ok(ApiResponse.success("Order status fetched successfully", response));
+	}
+
 }

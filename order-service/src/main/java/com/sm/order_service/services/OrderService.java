@@ -18,6 +18,7 @@ import com.sm.order_service.dto.request.OrderItemRequest;
 import com.sm.order_service.dto.request.OrderRequest;
 import com.sm.order_service.dto.request.ReservedStock;
 import com.sm.order_service.dto.response.OrderResponse;
+import com.sm.order_service.dto.response.OrderStatusResponse;
 import com.sm.order_service.dto.response.PageResponse;
 import com.sm.order_service.dto.response.ProductResponseDto;
 import com.sm.order_service.entity.Order;
@@ -207,6 +208,22 @@ public class OrderService {
 		Order updatedOrder = orderRepository.save(order);
 
 		return orderMapper.toOrderResponse(updatedOrder);
+	}
+
+	/**
+	 * Retrieves the current status of an order by its ID.
+	 *
+	 * @param id the ID of the order
+	 * @return the order ID, order number, and current status
+	 * @throws ResourceNotFoundException if the order does not exist
+	 */
+	@Transactional(readOnly = true)
+	public OrderStatusResponse getOrderStatus(Integer id) {
+
+		Order order = orderRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + id));
+
+		return new OrderStatusResponse(order.getId(), order.getOrderNumber(), order.getStatus());
 	}
 
 }
