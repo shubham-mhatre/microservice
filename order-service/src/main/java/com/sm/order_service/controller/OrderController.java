@@ -3,6 +3,7 @@ package com.sm.order_service.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -54,5 +55,13 @@ public class OrderController {
 		PageResponse<OrderResponse> response = orderService.getAllOrders(page, size, sortBy, direction);
 
 		return ResponseEntity.ok(ApiResponse.success("Orders fetched successfully", response));
+	}
+
+	@PatchMapping("/{id}/cancel")
+	public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable Integer id) {
+
+		OrderResponse response = orderService.cancelOrder(id);
+
+		return ResponseEntity.ok(ApiResponse.success("Order cancelled successfully", response));
 	}
 }

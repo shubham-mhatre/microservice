@@ -149,4 +149,32 @@ public class OrderService {
 				orderPage.getTotalPages(), orderPage.isFirst(), orderPage.isLast());
 	}
 
+	@Transactional
+	public OrderResponse cancelOrder(Integer id) {
+
+		// 1. Find the order.
+		Order order = orderRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + id));
+
+		// 2. Allow cancellation only for PENDING or CONFIRMED orders.
+		if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
+
+			throw new InvalidRequestStateException(
+					"Order cannot be cancelled because its status is " + order.getStatus());
+		}
+
+		// 3. Release the reserved stock for each line item.
+		for (OrderLineItem item : order.getOrderLineItems()) {
+			inventoryServiceClient.releaseStock(item.getSkuCode(), item.getQuantity());
+		}
+
+		// 4. Update the order status.
+		order.setStatus(OrderStatus.CANCELLED);
+
+		// 5. Persist and return the updated order.
+		Order cancelledOrder = orderRepository.save(order);
+
+		return orderMapper.toOrderResponse(cancelledOrder);
+	}
+
 }
