@@ -4,8 +4,13 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +18,7 @@ import com.sm.order_service.dto.request.OrderItemRequest;
 import com.sm.order_service.dto.request.OrderRequest;
 import com.sm.order_service.dto.request.ReservedStock;
 import com.sm.order_service.dto.response.OrderResponse;
+import com.sm.order_service.dto.response.PageResponse;
 import com.sm.order_service.dto.response.ProductResponseDto;
 import com.sm.order_service.entity.Order;
 import com.sm.order_service.entity.OrderLineItem;
@@ -114,6 +120,33 @@ public class OrderService {
 				.orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
 
 		return orderMapper.toOrderResponse(order);
+	}
+
+	@Transactional(readOnly = true)
+	public PageResponse<OrderResponse> getAllOrders(int page, int size, String sortBy, String direction) {
+
+		Set<String> allowedSortFields = Set.of("id", "orderNumber", "userId", "status", "totalAmount", "createdAt",
+				"updatedAt");
+
+		if (!allowedSortFields.contains(sortBy)) {
+			throw new InvalidRequestStateException(
+					"Invalid sortBy field. Allowed fields: " + String.join(", ", allowedSortFields));
+		}
+
+		if (!"asc".equalsIgnoreCase(direction) && !"desc".equalsIgnoreCase(direction)) {
+			throw new InvalidRequestStateException("Invalid direction. Allowed values: asc, desc");
+		}
+
+		Sort sort = "asc".equalsIgnoreCase(direction) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+
+		Pageable pageable = PageRequest.of(page, size, sort);
+
+		Page<Order> orderPage = orderRepository.findAll(pageable);
+
+		List<OrderResponse> orders = orderPage.getContent().stream().map(orderMapper::toOrderResponse).toList();
+
+		return new PageResponse<>(orders, orderPage.getNumber(), orderPage.getSize(), orderPage.getTotalElements(),
+				orderPage.getTotalPages(), orderPage.isFirst(), orderPage.isLast());
 	}
 
 }
