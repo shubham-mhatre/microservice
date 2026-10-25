@@ -1,37 +1,44 @@
 package com.sm.order_service.services;
 
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestClientException;
 
 import com.sm.order_service.dto.response.ApiResponse;
 import com.sm.order_service.dto.response.ProductResponseDto;
 import com.sm.order_service.exception.ResourceNotFoundException;
 import com.sm.order_service.exception.ServiceDownException;
 
-import lombok.RequiredArgsConstructor;
-
 @Component
-@RequiredArgsConstructor
 public class ProductServiceClient {
+	
+	@Value("${product.service.url}") 
+	private String productServiceUrl;
 
     private final RestTemplate restTemplate;
+    private final String PRODUCT_SERVICE_SKU_URL;
+    public ProductServiceClient(
+            @Value("${product.service.url}") String productServiceUrl,
+            RestTemplate restTemplate) {
 
-    private static final String PRODUCT_SERVICE_URL =
-            "http://product-service/api/products/sku/{skuCode}";
+        this.productServiceUrl = productServiceUrl;
+        this.restTemplate = restTemplate;
+        this.PRODUCT_SERVICE_SKU_URL =
+                productServiceUrl + "api/sku/{skuCode}";
+    }
 
     public ProductResponseDto getProductBySkuCode(String skuCode) {
-
+    	System.out.println("skucode "+skuCode);
         try {
             ResponseEntity<ApiResponse<ProductResponseDto>> response =
                     restTemplate.exchange(
-                            PRODUCT_SERVICE_URL,
+                    		PRODUCT_SERVICE_SKU_URL,
                             HttpMethod.GET,
                             null,
                             new ParameterizedTypeReference<

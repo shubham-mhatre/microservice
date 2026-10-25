@@ -25,18 +25,18 @@ public class InventoryServiceClient {
 	@Value("${inventory.service.url}") 
 	private String inventoryServiceUrl;
 
-	private final String RESERVE_URL = inventoryServiceUrl+"api/sku/{skuCode}/reserve";
-
-	private final String RELEASE_URL = inventoryServiceUrl+"api/sku/{skuCode}/release";
+//	private final String RESERVE_URL = inventoryServiceUrl+"api/sku/{skuCode}/reserve";
+//
+//	private final String RELEASE_URL = inventoryServiceUrl+"api/sku/{skuCode}/release";
 
 	private final RestTemplate restTemplate;
 
 	public void reserveStock(String skuCode, int quantity) {
-		executeStockOperation(RESERVE_URL, skuCode, quantity);
+		executeStockOperation(inventoryServiceUrl + "api/sku/{skuCode}/reserve", skuCode, quantity);
 	}
 
 	public void releaseStock(String skuCode, int quantity) {
-		executeStockOperation(RELEASE_URL, skuCode, quantity);
+		executeStockOperation(inventoryServiceUrl + "api/sku/{skuCode}/release", skuCode, quantity);
 	}
 
 	private void executeStockOperation(String url, String skuCode, int quantity) {

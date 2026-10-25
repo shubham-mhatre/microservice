@@ -1,5 +1,6 @@
 package com.sm.order_service.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +14,7 @@ import com.sm.order_service.dto.response.ApiResponse;
 import com.sm.order_service.dto.response.OrderResponse;
 import com.sm.order_service.services.OrderService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -32,4 +34,16 @@ public class OrderController {
                 ApiResponse.success("Order fetched successfully", response)
         );
     }
+	
+	@PostMapping
+	public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
+	        @Valid @RequestBody OrderRequest request) {
+
+	    OrderResponse response = orderService.createOrder(request);
+
+	    return ResponseEntity.status(HttpStatus.CREATED)
+	            .body(ApiResponse.success(
+	                    "Order created successfully",
+	                    response));
+	}
 }
