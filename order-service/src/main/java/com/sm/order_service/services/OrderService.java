@@ -48,36 +48,42 @@ public class OrderService {
 		try {
 			for (OrderItemRequest itemRequest : request.getItems()) {
 
-				// Retrieve the current product details.
-				ProductResponseDto product = productServiceClient.getProductBySkuCode(itemRequest.getSkuCode());
+				String skuCode = itemRequest.getSkuCode();
 
-				if (product == null || !product.isActive()) {
-					throw new InvalidRequestStateException("Product is unavailable: " + itemRequest.getSkuCode());
+				// 1. Fetch product details.
+				ProductResponseDto product = productServiceClient.getProductBySkuCode(skuCode);
+
+				if (product == null || !product.isActive() || product.getSkuCode() == null
+						|| !skuCode.equals(product.getSkuCode())) {
+					throw new InvalidRequestStateException("Product is unavailable or invalid for SKU: " + skuCode);
 				}
 
-				if (product.getPrice() == null || product.getPrice().signum() < 0) {
-					throw new InvalidRequestStateException(
-							"Invalid product price for SKU: " + itemRequest.getSkuCode());
+				// 2. Validate price. This version disallows zero-priced products.
+				if (product.getPrice() == null || product.getPrice().signum() <= 0) {
+					throw new InvalidRequestStateException("Invalid product price for SKU: " + skuCode);
 				}
 
-				// Reserve stock before creating the order line.
-				inventoryServiceClient.reserveStock(product.getSkuCode(), itemRequest.getQuantity());
+				// 3. Reserve stock.
+				inventoryServiceClient.reserveStock(skuCode, itemRequest.getQuantity());
 
-				reservedStocks.add(new ReservedStock(product.getSkuCode(), itemRequest.getQuantity()));
+				reservedStocks.add(new ReservedStock(skuCode, itemRequest.getQuantity()));
 
+				// 4. Build the order line item.
 				BigDecimal lineTotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
 
 				OrderLineItem lineItem = new OrderLineItem();
-				lineItem.setSkuCode(product.getSkuCode());
+				lineItem.setSkuCode(skuCode);
 				lineItem.setProductName(product.getName());
 				lineItem.setPrice(product.getPrice());
 				lineItem.setQuantity(itemRequest.getQuantity());
 				lineItem.setLineTotal(lineTotal);
 
 				order.addOrderLineItem(lineItem);
+
 				totalAmount = totalAmount.add(lineTotal);
 			}
 
+			// 5. Set the final total and persist the order.
 			order.setTotalAmount(totalAmount);
 
 			Order savedOrder = orderRepository.save(order);
@@ -86,8 +92,7 @@ public class OrderService {
 
 		} catch (RuntimeException exception) {
 
-			// A database rollback cannot undo remote stock reservations.
-			// Attempt compensation for reservations already completed.
+			// Release successful reservations in reverse order.
 			Collections.reverse(reservedStocks);
 
 			for (ReservedStock reserved : reservedStocks) {
@@ -102,7 +107,6 @@ public class OrderService {
 		}
 	}
 
-	
 	@Transactional(readOnly = true)
 	public OrderResponse getOrderById(Integer id) {
 
