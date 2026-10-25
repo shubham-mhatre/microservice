@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sm.order_service.dto.request.OrderRequest;
+import com.sm.order_service.dto.request.UpdateOrderStatusRequest;
 import com.sm.order_service.dto.response.ApiResponse;
 import com.sm.order_service.dto.response.OrderResponse;
 import com.sm.order_service.dto.response.PageResponse;
@@ -63,5 +64,14 @@ public class OrderController {
 		OrderResponse response = orderService.cancelOrder(id);
 
 		return ResponseEntity.ok(ApiResponse.success("Order cancelled successfully", response));
+	}
+
+	@PatchMapping("/{id}/status")
+	public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(@PathVariable Integer id,
+			@Valid @RequestBody UpdateOrderStatusRequest request) {
+
+		OrderResponse response = orderService.updateOrderStatus(id, request.status());
+
+		return ResponseEntity.ok(ApiResponse.success("Order status updated successfully", response));
 	}
 }

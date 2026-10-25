@@ -177,4 +177,36 @@ public class OrderService {
 		return orderMapper.toOrderResponse(cancelledOrder);
 	}
 
+	@Transactional
+	public OrderResponse updateOrderStatus(Integer id, OrderStatus newStatus) {
+
+		Order order = orderRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + id));
+
+		OrderStatus currentStatus = order.getStatus();
+
+		boolean validTransition = switch (currentStatus) {
+		case PENDING -> newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.FAILED;
+
+		case CONFIRMED -> newStatus == OrderStatus.PROCESSING || newStatus == OrderStatus.FAILED;
+
+		case PROCESSING -> newStatus == OrderStatus.SHIPPED || newStatus == OrderStatus.FAILED;
+
+		case SHIPPED -> newStatus == OrderStatus.DELIVERED;
+
+		case DELIVERED, CANCELLED, FAILED -> false;
+		};
+
+		if (!validTransition) {
+			throw new InvalidRequestStateException(
+					"Invalid order status transition from " + currentStatus + " to " + newStatus);
+		}
+
+		order.setStatus(newStatus);
+
+		Order updatedOrder = orderRepository.save(order);
+
+		return orderMapper.toOrderResponse(updatedOrder);
+	}
+
 }
