@@ -20,6 +20,7 @@ import com.sm.order_service.dto.response.OrderResponse;
 import com.sm.order_service.dto.response.OrderStatusHistoryResponse;
 import com.sm.order_service.dto.response.OrderStatusResponse;
 import com.sm.order_service.dto.response.PageResponse;
+import com.sm.order_service.entity.OrderStatus;
 import com.sm.order_service.services.OrderService;
 
 import jakarta.validation.Valid;
@@ -53,11 +54,18 @@ public class OrderController {
 
 	@GetMapping
 	public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> getAllOrders(
-			@RequestParam(defaultValue = "0") @Min(0) int page, @RequestParam(defaultValue = "10") @Min(1) int size,
+			@RequestParam(required = false) OrderStatus status, @RequestParam(defaultValue = "0") @Min(0) int page,
+			@RequestParam(defaultValue = "10") @Min(1) int size,
 			@RequestParam(defaultValue = "createdAt") String sortBy,
 			@RequestParam(defaultValue = "desc") String direction) {
 
-		PageResponse<OrderResponse> response = orderService.getAllOrders(page, size, sortBy, direction);
+		PageResponse<OrderResponse> response;
+
+		if (status == null) {
+			response = orderService.getAllOrders(page, size, sortBy, direction);
+		} else {
+			response = orderService.getOrdersByStatus(status, page, size, sortBy, direction);
+		}
 
 		return ResponseEntity.ok(ApiResponse.success("Orders fetched successfully", response));
 	}

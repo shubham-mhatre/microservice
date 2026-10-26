@@ -285,4 +285,20 @@ public class OrderService {
 		return orderMapper.toOrderResponse(order);
 	}
 
+	@Transactional(readOnly = true)
+	public PageResponse<OrderResponse> getOrdersByStatus(OrderStatus status, int page, int size, String sortBy,
+			String direction) {
+
+		Sort sort = direction.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+
+		Pageable pageable = PageRequest.of(page, size, sort);
+
+		Page<Order> orders = orderRepository.findByStatus(status, pageable);
+
+		List<OrderResponse> content = orders.getContent().stream().map(orderMapper::toOrderResponse).toList();
+
+		return new PageResponse<>(content, orders.getNumber(), orders.getSize(), orders.getTotalElements(),
+				orders.getTotalPages(), orders.hasNext(), orders.hasPrevious());
+	}
+
 }
