@@ -1,7 +1,9 @@
 package com.sm.order_service.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -54,18 +56,22 @@ public class OrderController {
 
 	@GetMapping
 	public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> getAllOrders(
-			@RequestParam(required = false) OrderStatus status, @RequestParam(defaultValue = "0") @Min(0) int page,
+			@RequestParam(required = false) OrderStatus status,
+
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+
+			@RequestParam(defaultValue = "0") @Min(0) int page,
+
 			@RequestParam(defaultValue = "10") @Min(1) int size,
+
 			@RequestParam(defaultValue = "createdAt") String sortBy,
+
 			@RequestParam(defaultValue = "desc") String direction) {
 
-		PageResponse<OrderResponse> response;
-
-		if (status == null) {
-			response = orderService.getAllOrders(page, size, sortBy, direction);
-		} else {
-			response = orderService.getOrdersByStatus(status, page, size, sortBy, direction);
-		}
+		PageResponse<OrderResponse> response = orderService.getOrders(status, fromDate, toDate, page, size, sortBy,
+				direction);
 
 		return ResponseEntity.ok(ApiResponse.success("Orders fetched successfully", response));
 	}

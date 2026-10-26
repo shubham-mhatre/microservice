@@ -1,6 +1,8 @@
 package com.sm.order_service.services;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -128,33 +130,6 @@ public class OrderService {
 				.orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
 
 		return orderMapper.toOrderResponse(order);
-	}
-
-	@Transactional(readOnly = true)
-	public PageResponse<OrderResponse> getAllOrders(int page, int size, String sortBy, String direction) {
-
-		Set<String> allowedSortFields = Set.of("id", "orderNumber", "userId", "status", "totalAmount", "createdAt",
-				"updatedAt");
-
-		if (!allowedSortFields.contains(sortBy)) {
-			throw new InvalidRequestStateException(
-					"Invalid sortBy field. Allowed fields: " + String.join(", ", allowedSortFields));
-		}
-
-		if (!"asc".equalsIgnoreCase(direction) && !"desc".equalsIgnoreCase(direction)) {
-			throw new InvalidRequestStateException("Invalid direction. Allowed values: asc, desc");
-		}
-
-		Sort sort = "asc".equalsIgnoreCase(direction) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-
-		Pageable pageable = PageRequest.of(page, size, sort);
-
-		Page<Order> orderPage = orderRepository.findAll(pageable);
-
-		List<OrderResponse> orders = orderPage.getContent().stream().map(orderMapper::toOrderResponse).toList();
-
-		return new PageResponse<>(orders, orderPage.getNumber(), orderPage.getSize(), orderPage.getTotalElements(),
-				orderPage.getTotalPages(), orderPage.isFirst(), orderPage.isLast());
 	}
 
 	@Transactional
@@ -286,15 +261,49 @@ public class OrderService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<OrderResponse> getOrdersByStatus(OrderStatus status, int page, int size, String sortBy,
-			String direction) {
+	public PageResponse<OrderResponse> getOrders(OrderStatus status, LocalDate fromDate, LocalDate toDate, int page,
+			int size, String sortBy, String direction) {
 
-		Sort sort = direction.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+		// Validate date range
+		if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+			throw new InvalidRequestStateException("fromDate must be before or equal to toDate");
+		}
+
+		// Validate pagination
+		if (page < 0) {
+			throw new InvalidRequestStateException("Page number cannot be negative");
+		}
+
+		if (size < 1) {
+			throw new InvalidRequestStateException("Page size must be at least 1");
+		}
+
+		// Restrict sorting to valid Order entity properties
+		Set<String> allowedSortFields = Set.of("id", "orderNumber", "userId", "status", "totalAmount", "createdAt",
+				"updatedAt");
+
+		if (!allowedSortFields.contains(sortBy)) {
+			throw new InvalidRequestStateException("Invalid sort field: " + sortBy);
+		}
+
+		if (!"asc".equalsIgnoreCase(direction) && !"desc".equalsIgnoreCase(direction)) {
+			throw new InvalidRequestStateException("Direction must be either 'asc' or 'desc'");
+		}
+
+		// Convert dates to timestamp boundaries
+		LocalDateTime startDateTime = fromDate != null ? fromDate.atStartOfDay() : null;
+
+		LocalDateTime endDateTimeExclusive = toDate != null ? toDate.plusDays(1).atStartOfDay() : null;
+
+		// Configure sorting and pagination
+		Sort sort = "asc".equalsIgnoreCase(direction) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
 
 		Pageable pageable = PageRequest.of(page, size, sort);
 
-		Page<Order> orders = orderRepository.findByStatus(status, pageable);
+		// Fetch orders using all supplied filters
+		Page<Order> orders = orderRepository.searchOrders(status, startDateTime, endDateTimeExclusive, pageable);
 
+		// Map entities to response DTOs
 		List<OrderResponse> content = orders.getContent().stream().map(orderMapper::toOrderResponse).toList();
 
 		return new PageResponse<>(content, orders.getNumber(), orders.getSize(), orders.getTotalElements(),
