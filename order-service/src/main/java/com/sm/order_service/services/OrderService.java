@@ -269,4 +269,20 @@ public class OrderService {
 				.toList();
 	}
 
+	/**
+	 * Retrieves an order using its unique order number.
+	 *
+	 * @param orderNumber the unique order number
+	 * @return the order details
+	 * @throws ResourceNotFoundException if the order does not exist
+	 */
+	@Transactional(readOnly = true)
+	public OrderResponse getOrderByOrderNumber(String orderNumber) {
+
+		Order order = orderRepository.findByOrderNumber(orderNumber)
+				.orElseThrow(() -> new ResourceNotFoundException("Order not found with order number: " + orderNumber));
+
+		return orderMapper.toOrderResponse(order);
+	}
+
 }

@@ -108,4 +108,18 @@ public class OrderController {
 		return ResponseEntity.ok(ApiResponse.success("Order status history fetched successfully", history));
 	}
 
+	/**
+	 * Retrieves an order using its unique order number.
+	 *
+	 * @param orderNumber the unique order number
+	 * @return the order details
+	 */
+	@GetMapping("/number/{orderNumber}")
+	public ResponseEntity<ApiResponse<OrderResponse>> getOrderByOrderNumber(@PathVariable String orderNumber) {
+
+		OrderResponse response = orderService.getOrderByOrderNumber(orderNumber);
+
+		return ResponseEntity.ok(ApiResponse.success("Order fetched successfully", response));
+	}
+
 }
