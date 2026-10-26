@@ -1,5 +1,7 @@
 package com.sm.order_service.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +17,7 @@ import com.sm.order_service.dto.request.OrderRequest;
 import com.sm.order_service.dto.request.UpdateOrderStatusRequest;
 import com.sm.order_service.dto.response.ApiResponse;
 import com.sm.order_service.dto.response.OrderResponse;
+import com.sm.order_service.dto.response.OrderStatusHistoryResponse;
 import com.sm.order_service.dto.response.OrderStatusResponse;
 import com.sm.order_service.dto.response.PageResponse;
 import com.sm.order_service.services.OrderService;
@@ -88,6 +91,21 @@ public class OrderController {
 		OrderStatusResponse response = orderService.getOrderStatus(id);
 
 		return ResponseEntity.ok(ApiResponse.success("Order status fetched successfully", response));
+	}
+
+	/**
+	 * Retrieves the status history of an order.
+	 *
+	 * @param id the ID of the order
+	 * @return the order's status history
+	 */
+	@GetMapping("/{id}/history")
+	public ResponseEntity<ApiResponse<List<OrderStatusHistoryResponse>>> getOrderStatusHistory(
+			@PathVariable Integer id) {
+
+		List<OrderStatusHistoryResponse> history = orderService.getOrderStatusHistory(id);
+
+		return ResponseEntity.ok(ApiResponse.success("Order status history fetched successfully", history));
 	}
 
 }

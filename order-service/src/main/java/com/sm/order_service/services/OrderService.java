@@ -18,16 +18,19 @@ import com.sm.order_service.dto.request.OrderItemRequest;
 import com.sm.order_service.dto.request.OrderRequest;
 import com.sm.order_service.dto.request.ReservedStock;
 import com.sm.order_service.dto.response.OrderResponse;
+import com.sm.order_service.dto.response.OrderStatusHistoryResponse;
 import com.sm.order_service.dto.response.OrderStatusResponse;
 import com.sm.order_service.dto.response.PageResponse;
 import com.sm.order_service.dto.response.ProductResponseDto;
 import com.sm.order_service.entity.Order;
 import com.sm.order_service.entity.OrderLineItem;
 import com.sm.order_service.entity.OrderStatus;
+import com.sm.order_service.entity.OrderStatusHistory;
 import com.sm.order_service.exception.InvalidRequestStateException;
 import com.sm.order_service.exception.ResourceNotFoundException;
 import com.sm.order_service.mapper.OrderMapper;
 import com.sm.order_service.repository.OrderRepository;
+import com.sm.order_service.repository.OrderStatusHistoryRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,6 +42,7 @@ public class OrderService {
 	private final OrderMapper orderMapper;
 	private final ProductServiceClient productServiceClient;
 	private final InventoryServiceClient inventoryServiceClient;
+	private final OrderStatusHistoryRepository orderStatusHistoryRepository;
 
 	@Transactional
 	public OrderResponse createOrder(OrderRequest request) {
@@ -94,6 +98,9 @@ public class OrderService {
 			order.setTotalAmount(totalAmount);
 
 			Order savedOrder = orderRepository.save(order);
+
+			// 6. maintain order history
+			recordStatusHistory(savedOrder, null, OrderStatus.PENDING, "Order created");
 
 			return orderMapper.toOrderResponse(savedOrder);
 
@@ -169,11 +176,16 @@ public class OrderService {
 			inventoryServiceClient.releaseStock(item.getSkuCode(), item.getQuantity());
 		}
 
+		OrderStatus oldStatus = order.getStatus();
+
 		// 4. Update the order status.
 		order.setStatus(OrderStatus.CANCELLED);
 
 		// 5. Persist and return the updated order.
 		Order cancelledOrder = orderRepository.save(order);
+
+		// 6. maintain order history
+		recordStatusHistory(cancelledOrder, oldStatus, OrderStatus.CANCELLED, "Order cancelled");
 
 		return orderMapper.toOrderResponse(cancelledOrder);
 	}
@@ -207,6 +219,8 @@ public class OrderService {
 
 		Order updatedOrder = orderRepository.save(order);
 
+		recordStatusHistory(updatedOrder, currentStatus, newStatus, "Order status updated");
+
 		return orderMapper.toOrderResponse(updatedOrder);
 	}
 
@@ -224,6 +238,35 @@ public class OrderService {
 				.orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + id));
 
 		return new OrderStatusResponse(order.getId(), order.getOrderNumber(), order.getStatus());
+	}
+
+	private void recordStatusHistory(Order order, OrderStatus oldStatus, OrderStatus newStatus, String remarks) {
+
+		OrderStatusHistory history = new OrderStatusHistory();
+		history.setOrderId(order.getId());
+		history.setOldStatus(oldStatus);
+		history.setNewStatus(newStatus);
+		history.setRemarks(remarks);
+
+		orderStatusHistoryRepository.save(history);
+	}
+
+	/**
+	 * Retrieves the status history of an order in chronological order.
+	 *
+	 * @param id the ID of the order
+	 * @return the list of status changes for the order
+	 * @throws ResourceNotFoundException if the order does not exist
+	 */
+	@Transactional(readOnly = true)
+	public List<OrderStatusHistoryResponse> getOrderStatusHistory(Integer id) {
+
+		orderRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + id));
+
+		return orderStatusHistoryRepository.findByOrderIdOrderByChangedAtAscIdAsc(id).stream()
+				.map(history -> new OrderStatusHistoryResponse(history.getOldStatus(), history.getNewStatus(),
+						history.getChangedAt(), history.getRemarks()))
+				.toList();
 	}
 
 }
