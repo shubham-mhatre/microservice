@@ -20,6 +20,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -59,6 +60,9 @@ public class Order {
         fetch = FetchType.LAZY
     )
     private List<OrderLineItem> orderLineItems = new ArrayList<>();
+    
+    @Version
+    private Long version;
     
     public void addOrderLineItem(OrderLineItem lineItem) {
         orderLineItems.add(lineItem);

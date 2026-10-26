@@ -77,7 +77,7 @@ public class OrderController {
 	}
 
 	@PatchMapping("/{id}/cancel")
-	public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable Integer id) {
+	public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable @Positive Integer id) {
 
 		OrderResponse response = orderService.cancelOrder(id);
 
@@ -85,7 +85,7 @@ public class OrderController {
 	}
 
 	@PatchMapping("/{id}/status")
-	public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(@PathVariable Integer id,
+	public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(@PathVariable @Positive Integer id,
 			@Valid @RequestBody UpdateOrderStatusRequest request) {
 
 		OrderResponse response = orderService.updateOrderStatus(id, request.status());
@@ -100,7 +100,7 @@ public class OrderController {
 	 * @return the current order status
 	 */
 	@GetMapping("/{id}/status")
-	public ResponseEntity<ApiResponse<OrderStatusResponse>> getOrderStatus(@PathVariable Integer id) {
+	public ResponseEntity<ApiResponse<OrderStatusResponse>> getOrderStatus(@PathVariable @Positive Integer id) {
 
 		OrderStatusResponse response = orderService.getOrderStatus(id);
 
@@ -115,7 +115,7 @@ public class OrderController {
 	 */
 	@GetMapping("/{id}/history")
 	public ResponseEntity<ApiResponse<List<OrderStatusHistoryResponse>>> getOrderStatusHistory(
-			@PathVariable Integer id) {
+			@PathVariable @Positive Integer id) {
 
 		List<OrderStatusHistoryResponse> history = orderService.getOrderStatusHistory(id);
 

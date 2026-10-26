@@ -35,7 +35,9 @@ import com.sm.order_service.repository.OrderRepository;
 import com.sm.order_service.repository.OrderStatusHistoryRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -115,6 +117,10 @@ public class OrderService {
 				try {
 					inventoryServiceClient.releaseStock(reserved.skuCode(), reserved.quantity());
 				} catch (RuntimeException compensationException) {
+					log.error("Stock compensation failed for SKU {} and quantity {}", reserved.skuCode(),
+							reserved.quantity(), compensationException);
+
+					exception.addSuppressed(compensationException);
 					exception.addSuppressed(compensationException);
 				}
 			}
@@ -167,6 +173,10 @@ public class OrderService {
 
 	@Transactional
 	public OrderResponse updateOrderStatus(Integer id, OrderStatus newStatus) {
+
+		if (newStatus == null) {
+			throw new InvalidRequestStateException("Order status is required");
+		}
 
 		Order order = orderRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + id));
