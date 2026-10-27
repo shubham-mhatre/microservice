@@ -27,5 +27,10 @@ public class FallbackController {
     public ResponseEntity<String> authJwtServiceFallback() {
         return new ResponseEntity<>("Auth JWT Service is currently unavailable. Please try again later.", HttpStatus.OK);
     }
+    
+    @RequestMapping("/fallback/payment")
+    public ResponseEntity<String> paymentFallback() {
+        return new ResponseEntity<>("Payment is currently unavailable. Please try again later.", HttpStatus.OK);
+    }
 
 }
