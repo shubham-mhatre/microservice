@@ -1,5 +1,7 @@
 package com.sm.payment_service.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -45,6 +47,20 @@ public class PaymentController {
 	public ResponseEntity<ApiResponse<PaymentResponse>> getPaymentById(@PathVariable Long paymentId) {
 
 		PaymentResponse response = paymentService.getPaymentById(paymentId);
+
+		return ResponseEntity.ok(ApiResponse.success("Payment details retrieved successfully", response));
+	}
+
+	/**
+	 * Retrieves all payment attempts for an order.
+	 *
+	 * @param orderId the ID of the order
+	 * @return payment attempts wrapped in ApiResponse
+	 */
+	@GetMapping("/order/{orderId}")
+	public ResponseEntity<ApiResponse<List<PaymentResponse>>> getPaymentsByOrderId(@PathVariable Long orderId) {
+
+		List<PaymentResponse> response = paymentService.getPaymentsByOrderId(orderId);
 
 		return ResponseEntity.ok(ApiResponse.success("Payment details retrieved successfully", response));
 	}

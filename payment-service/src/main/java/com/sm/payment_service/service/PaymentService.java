@@ -2,6 +2,7 @@ package com.sm.payment_service.service;
 
 import java.math.BigDecimal;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -80,6 +81,24 @@ public class PaymentService {
 				.orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
 
 		return paymentMapper.mapPaymentToResponse(payment);
+	}
+
+	/**
+	 * Retrieves all payment attempts associated with an order.
+	 *
+	 * @param orderId the ID of the order
+	 * @return payment attempts sorted by creation time, newest first
+	 * @throws PaymentNotFoundException if no payments exist for the order
+	 */
+	public List<PaymentResponse> getPaymentsByOrderId(Long orderId) {
+
+		List<Payment> payments = paymentRepository.findByOrderIdOrderByCreatedAtDesc(orderId);
+
+		if (payments.isEmpty()) {
+			throw new PaymentNotFoundException("No payments found for order ID: " + orderId);
+		}
+
+		return payments.stream().map(paymentMapper::mapPaymentToResponse).toList();
 	}
 
 }
