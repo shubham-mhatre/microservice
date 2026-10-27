@@ -16,6 +16,7 @@ import com.sm.payment_service.entity.Payment;
 import com.sm.payment_service.enums.PaymentStatus;
 import com.sm.payment_service.exception.InvalidPaymentException;
 import com.sm.payment_service.exception.PaymentConflictException;
+import com.sm.payment_service.exception.PaymentNotFoundException;
 import com.sm.payment_service.mapper.PaymentMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -64,6 +65,21 @@ public class PaymentService {
 		Payment savedPayment = paymentRepository.save(payment);
 
 		return paymentMapper.mapPaymentToResponse(savedPayment);
+	}
+
+	/**
+	 * Retrieves payment details using the payment ID.
+	 *
+	 * @param paymentId the ID of the payment to retrieve
+	 * @return the payment details
+	 * @throws PaymentNotFoundException if the payment does not exist
+	 */
+	public PaymentResponse getPaymentById(Long paymentId) {
+
+		Payment payment = paymentRepository.findById(paymentId)
+				.orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
+
+		return paymentMapper.mapPaymentToResponse(payment);
 	}
 
 }

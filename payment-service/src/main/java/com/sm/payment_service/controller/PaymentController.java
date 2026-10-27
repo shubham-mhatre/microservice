@@ -3,6 +3,8 @@ package com.sm.payment_service.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,4 +34,19 @@ public class PaymentController {
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(ApiResponse.success("Payment initiated successfully", response));
 	}
+
+	/**
+	 * Retrieves payment details by payment ID.
+	 *
+	 * @param paymentId the ID of the payment
+	 * @return the payment details wrapped in ApiResponse
+	 */
+	@GetMapping("/{paymentId}")
+	public ResponseEntity<ApiResponse<PaymentResponse>> getPaymentById(@PathVariable Long paymentId) {
+
+		PaymentResponse response = paymentService.getPaymentById(paymentId);
+
+		return ResponseEntity.ok(ApiResponse.success("Payment details retrieved successfully", response));
+	}
+
 }
