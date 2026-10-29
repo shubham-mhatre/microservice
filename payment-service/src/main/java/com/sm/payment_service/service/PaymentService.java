@@ -5,6 +5,10 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,6 +16,7 @@ import com.sm.payment_service.client.OrderServiceClient;
 import com.sm.payment_service.dto.request.PaymentRequest;
 import com.sm.payment_service.dto.request.ProcessPaymentRequest;
 import com.sm.payment_service.dto.response.OrderDetailsResponse;
+import com.sm.payment_service.dto.response.PageResponse;
 import com.sm.payment_service.dto.response.PaymentResponse;
 import com.sm.payment_service.dto.respositories.PaymentRepository;
 import com.sm.payment_service.entity.Payment;
@@ -126,6 +131,35 @@ public class PaymentService {
 		Payment savedPayment = paymentRepository.save(payment);
 
 		return paymentMapper.mapPaymentToResponse(savedPayment);
+	}
+
+	public PageResponse<PaymentResponse> getAllPayments(int page, int size, String sortBy, String direction) {
+
+		if (page < 0) {
+			throw new InvalidPaymentException("Page number cannot be negative");
+		}
+
+		if (size <= 0) {
+			throw new InvalidPaymentException("Page size must be greater than zero");
+		}
+
+		Sort.Direction sortDirection;
+
+		try {
+			sortDirection = Sort.Direction.fromString(direction);
+		} catch (IllegalArgumentException ex) {
+			throw new InvalidPaymentException("Direction must be either 'asc' or 'desc'");
+		}
+
+		Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+
+		Page<Payment> paymentPage = paymentRepository.findAll(pageable);
+
+		List<PaymentResponse> items = paymentPage.getContent().stream().map(paymentMapper::mapPaymentToResponse)
+				.toList();
+
+		return new PageResponse<>(items, paymentPage.getNumber(), paymentPage.getSize(), paymentPage.getTotalElements(),
+				paymentPage.getTotalPages(), paymentPage.hasNext(), paymentPage.hasPrevious());
 	}
 
 }

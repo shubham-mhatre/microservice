@@ -11,11 +11,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sm.payment_service.dto.request.PaymentRequest;
 import com.sm.payment_service.dto.request.ProcessPaymentRequest;
 import com.sm.payment_service.dto.response.ApiResponse;
+import com.sm.payment_service.dto.response.PageResponse;
 import com.sm.payment_service.dto.response.PaymentResponse;
 import com.sm.payment_service.service.PaymentService;
 
@@ -74,6 +76,17 @@ public class PaymentController {
 		PaymentResponse response = paymentService.processPayment(paymentId, request);
 
 		return ResponseEntity.ok(ApiResponse.success("Payment processed successfully", response));
+	}
+
+	@GetMapping
+	public ResponseEntity<ApiResponse<PageResponse<PaymentResponse>>> getAllPayments(
+			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
+			@RequestParam(defaultValue = "createdAt") String sortBy,
+			@RequestParam(defaultValue = "desc") String direction) {
+
+		PageResponse<PaymentResponse> response = paymentService.getAllPayments(page, size, sortBy, direction);
+
+		return ResponseEntity.ok(ApiResponse.success("Payments retrieved successfully", response));
 	}
 
 }
