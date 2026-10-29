@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sm.payment_service.client.OrderServiceClient;
 import com.sm.payment_service.dto.request.PaymentRequest;
+import com.sm.payment_service.dto.request.ProcessPaymentRequest;
 import com.sm.payment_service.dto.response.OrderDetailsResponse;
 import com.sm.payment_service.dto.response.PaymentResponse;
 import com.sm.payment_service.dto.respositories.PaymentRepository;
@@ -99,6 +100,32 @@ public class PaymentService {
 		}
 
 		return payments.stream().map(paymentMapper::mapPaymentToResponse).toList();
+	}
+
+	@Transactional
+	public PaymentResponse processPayment(Long paymentId, ProcessPaymentRequest request) {
+
+		Payment payment = paymentRepository.findById(paymentId)
+				.orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
+
+		PaymentStatus requestedStatus = PaymentStatus.valueOf(request.status());
+
+		if (payment.getStatus() != PaymentStatus.INITIATED) {
+			throw new PaymentConflictException(
+					"Payment cannot be processed because its current status is " + payment.getStatus());
+		}
+
+		payment.setStatus(requestedStatus);
+
+		if (requestedStatus == PaymentStatus.FAILED) {
+			payment.setFailureReason("Payment failed during processing");
+		} else {
+			payment.setFailureReason(null);
+		}
+
+		Payment savedPayment = paymentRepository.save(payment);
+
+		return paymentMapper.mapPaymentToResponse(savedPayment);
 	}
 
 }
