@@ -3,6 +3,7 @@ package com.sm.payment_service.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.sm.payment_service.enums.OrderSyncStatus;
 import com.sm.payment_service.enums.PaymentMethod;
 import com.sm.payment_service.enums.PaymentStatus;
 
@@ -61,6 +62,19 @@ public class Payment {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_sync_status", nullable = false)
+    private OrderSyncStatus orderSyncStatus = OrderSyncStatus.PENDING;
+
+    @Column(name = "order_sync_attempts", nullable = false)
+    private Integer orderSyncAttempts = 0;
+
+    @Column(name = "order_sync_error", length = 1000)
+    private String orderSyncError;
+
+    @Column(name = "order_synced_at")
+    private LocalDateTime orderSyncedAt;
 
     @Version
     @Column(nullable = false)

@@ -22,6 +22,7 @@ import com.sm.payment_service.dto.response.PaymentResponse;
 import com.sm.payment_service.service.PaymentService;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -87,6 +88,15 @@ public class PaymentController {
 		PageResponse<PaymentResponse> response = paymentService.getAllPayments(page, size, sortBy, direction);
 
 		return ResponseEntity.ok(ApiResponse.success("Payments retrieved successfully", response));
+	}
+
+	@PostMapping("/{paymentId}/sync-order")
+	public ResponseEntity<ApiResponse<PaymentResponse>> retryOrderSynchronization(
+			@PathVariable @Positive Long paymentId) {
+
+		PaymentResponse response = paymentService.retryOrderSynchronization(paymentId);
+
+		return ResponseEntity.ok(ApiResponse.success("Order synchronization attempted successfully", response));
 	}
 
 }

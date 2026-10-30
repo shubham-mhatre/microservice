@@ -1,6 +1,7 @@
 package com.sm.payment_service.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +22,7 @@ import com.sm.payment_service.dto.response.PageResponse;
 import com.sm.payment_service.dto.response.PaymentResponse;
 import com.sm.payment_service.dto.respositories.PaymentRepository;
 import com.sm.payment_service.entity.Payment;
+import com.sm.payment_service.enums.OrderSyncStatus;
 import com.sm.payment_service.enums.PaymentStatus;
 import com.sm.payment_service.exception.InvalidPaymentException;
 import com.sm.payment_service.exception.PaymentConflictException;
@@ -36,6 +38,8 @@ public class PaymentService {
 	private final PaymentRepository paymentRepository;
 	private final OrderServiceClient orderServiceClient;
 	private final PaymentMapper paymentMapper;
+
+	private static final int MAX_SYNC_ATTEMPTS = 5;
 
 	@Transactional
 	public PaymentResponse initiatePayment(PaymentRequest request) {
@@ -70,7 +74,7 @@ public class PaymentService {
 		payment.setStatus(PaymentStatus.INITIATED);
 		payment.setTransactionReference("PAY-" + UUID.randomUUID());
 
-		Payment savedPayment = paymentRepository.save(payment);
+		Payment savedPayment = paymentRepository.saveAndFlush(payment);
 
 		return paymentMapper.mapPaymentToResponse(savedPayment);
 	}
@@ -130,14 +134,10 @@ public class PaymentService {
 		}
 
 		Payment savedPayment = paymentRepository.save(payment);
-		
-		if (requestedStatus == PaymentStatus.SUCCESS) {
 
-	        orderServiceClient.updateOrderStatus(
-	                savedPayment.getOrderId(),
-	                "CONFIRMED"
-	        );
-	    }
+		if (requestedStatus == PaymentStatus.SUCCESS) {
+			return synchronizeOrder(savedPayment.getId());
+		}
 
 		return paymentMapper.mapPaymentToResponse(savedPayment);
 	}
@@ -169,6 +169,84 @@ public class PaymentService {
 
 		return new PageResponse<>(items, paymentPage.getNumber(), paymentPage.getSize(), paymentPage.getTotalElements(),
 				paymentPage.getTotalPages(), paymentPage.hasNext(), paymentPage.hasPrevious());
+	}
+
+	public PaymentResponse synchronizeOrder(Long paymentId) {
+
+		Payment payment = paymentRepository.findById(paymentId)
+				.orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
+
+		if (payment.getStatus() != PaymentStatus.SUCCESS) {
+			throw new InvalidPaymentException("Order synchronization is only allowed for successful payments.");
+		}
+
+		if (payment.getOrderSyncStatus() == OrderSyncStatus.SUCCESS) {
+			return paymentMapper.mapPaymentToResponse(payment);
+		}
+
+		if (payment.getOrderSyncAttempts() >= MAX_SYNC_ATTEMPTS) {
+			payment.setOrderSyncStatus(OrderSyncStatus.FAILED);
+
+			Payment updatedPayment = paymentRepository.saveAndFlush(payment);
+
+			return paymentMapper.mapPaymentToResponse(updatedPayment);
+		}
+
+		// Increment attempt count and persist before calling Order Service.
+		payment.setOrderSyncAttempts(payment.getOrderSyncAttempts() + 1);
+		payment.setOrderSyncError(null);
+
+		// IMPORTANT: Use the returned entity because @Version may change.
+		payment = paymentRepository.saveAndFlush(payment);
+
+		try {
+
+			orderServiceClient.updateOrderStatus(payment.getOrderId(), "CONFIRMED");
+
+			payment.setOrderSyncStatus(OrderSyncStatus.SUCCESS);
+			payment.setOrderSyncedAt(LocalDateTime.now());
+			payment.setOrderSyncError(null);
+
+		} catch (RuntimeException ex) {
+
+			payment.setOrderSyncError(ex.getMessage());
+
+			if (payment.getOrderSyncAttempts() >= MAX_SYNC_ATTEMPTS) {
+				payment.setOrderSyncStatus(OrderSyncStatus.FAILED);
+			} else {
+				payment.setOrderSyncStatus(OrderSyncStatus.PENDING);
+			}
+		}
+
+		// Save the updated entity, not the original detached instance.
+		Payment updatedPayment = paymentRepository.saveAndFlush(payment);
+
+		return paymentMapper.mapPaymentToResponse(updatedPayment);
+	}
+
+	// manual retry for admin
+	public PaymentResponse retryOrderSynchronization(Long paymentId) {
+
+		Payment payment = paymentRepository.findById(paymentId)
+				.orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
+
+		if (payment.getStatus() != PaymentStatus.SUCCESS) {
+			throw new InvalidPaymentException("Only successful payments can be synchronized with orders.");
+		}
+
+		if (payment.getOrderSyncStatus() == OrderSyncStatus.SUCCESS) {
+			return paymentMapper.mapPaymentToResponse(payment);
+		}
+
+		// Allow a fresh retry cycle after automatic attempts are exhausted.
+		if (payment.getOrderSyncStatus() == OrderSyncStatus.FAILED) {
+			payment.setOrderSyncAttempts(0);
+			payment.setOrderSyncStatus(OrderSyncStatus.PENDING);
+			payment.setOrderSyncError(null);
+			paymentRepository.save(payment);
+		}
+
+		return synchronizeOrder(paymentId);
 	}
 
 }

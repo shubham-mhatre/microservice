@@ -183,6 +183,12 @@ public class OrderService {
 
 		OrderStatus currentStatus = order.getStatus();
 
+		// Idempotency: if the order already has the requested status,
+		// consider the operation successful without updating it again.
+		if (currentStatus == newStatus) {
+			return orderMapper.toOrderResponse(order);
+		}
+
 		boolean validTransition = switch (currentStatus) {
 		case PENDING -> newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.FAILED;
 
