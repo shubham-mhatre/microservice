@@ -3,9 +3,6 @@ package com.sm.payment_service.exception;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
-
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +13,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.sm.payment_service.dto.response.ExceptionResponseDto;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -51,6 +50,16 @@ public class GlobalExceptionHandler {
 
 		return buildResponse(HttpStatus.SERVICE_UNAVAILABLE,
 				"Order Service is currently unavailable. Please try again later.", request);
+	}
+	
+	@ExceptionHandler(InvalidRequestStateException.class)
+	public ResponseEntity<ExceptionResponseDto> handleInvalidRequestStateException(InvalidRequestStateException ex,
+			HttpServletRequest request) {
+
+		ExceptionResponseDto response = new ExceptionResponseDto(LocalDateTime.now(), ex.getMessage(),
+				HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT.getReasonPhrase(), request.getRequestURI(), false);
+
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)

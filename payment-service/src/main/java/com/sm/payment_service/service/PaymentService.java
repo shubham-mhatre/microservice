@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sm.payment_service.client.OrderServiceClient;
@@ -107,7 +108,7 @@ public class PaymentService {
 		return payments.stream().map(paymentMapper::mapPaymentToResponse).toList();
 	}
 
-	@Transactional
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	public PaymentResponse processPayment(Long paymentId, ProcessPaymentRequest request) {
 
 		Payment payment = paymentRepository.findById(paymentId)
@@ -129,6 +130,14 @@ public class PaymentService {
 		}
 
 		Payment savedPayment = paymentRepository.save(payment);
+		
+		if (requestedStatus == PaymentStatus.SUCCESS) {
+
+	        orderServiceClient.updateOrderStatus(
+	                savedPayment.getOrderId(),
+	                "CONFIRMED"
+	        );
+	    }
 
 		return paymentMapper.mapPaymentToResponse(savedPayment);
 	}
