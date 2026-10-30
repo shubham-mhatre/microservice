@@ -133,13 +133,10 @@ public class PaymentService {
 			payment.setFailureReason(null);
 		}
 
-		Payment savedPayment = paymentRepository.save(payment);
+		Payment savedPayment = paymentRepository.saveAndFlush(payment);
 
-		if (requestedStatus == PaymentStatus.SUCCESS) {
-			return synchronizeOrder(savedPayment.getId());
-		}
-
-		return paymentMapper.mapPaymentToResponse(savedPayment);
+		// Synchronize Order Service for both SUCCESS and FAILED payments
+		return synchronizeOrder(savedPayment.getId());
 	}
 
 	public PageResponse<PaymentResponse> getAllPayments(int page, int size, String sortBy, String direction) {
@@ -176,8 +173,10 @@ public class PaymentService {
 		Payment payment = paymentRepository.findById(paymentId)
 				.orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
 
-		if (payment.getStatus() != PaymentStatus.SUCCESS) {
-			throw new InvalidPaymentException("Order synchronization is only allowed for successful payments.");
+		if (payment.getStatus() != PaymentStatus.SUCCESS && payment.getStatus() != PaymentStatus.FAILED) {
+
+			throw new InvalidPaymentException(
+					"Order synchronization is only allowed for successful or failed payments.");
 		}
 
 		if (payment.getOrderSyncStatus() == OrderSyncStatus.SUCCESS) {
@@ -199,9 +198,11 @@ public class PaymentService {
 		// IMPORTANT: Use the returned entity because @Version may change.
 		payment = paymentRepository.saveAndFlush(payment);
 
+		String orderStatus = payment.getStatus() == PaymentStatus.SUCCESS ? "CONFIRMED" : "FAILED";
+
 		try {
 
-			orderServiceClient.updateOrderStatus(payment.getOrderId(), "CONFIRMED");
+			orderServiceClient.updateOrderStatus(payment.getOrderId(), orderStatus);
 
 			payment.setOrderSyncStatus(OrderSyncStatus.SUCCESS);
 			payment.setOrderSyncedAt(LocalDateTime.now());

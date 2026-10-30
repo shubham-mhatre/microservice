@@ -28,8 +28,9 @@ public class OrderSyncScheduler {
 	public void retryPendingOrderSynchronizations() {
 
 		List<Payment> pendingPayments = paymentRepository
-				.findTop50ByStatusAndOrderSyncStatusAndOrderSyncAttemptsLessThanOrderByCreatedAtAsc(
-						PaymentStatus.SUCCESS, OrderSyncStatus.PENDING, MAX_SYNC_ATTEMPTS);
+				.findTop50ByStatusInAndOrderSyncStatusAndOrderSyncAttemptsLessThanOrderByCreatedAtAsc(
+						List.of(PaymentStatus.SUCCESS, PaymentStatus.FAILED), OrderSyncStatus.PENDING,
+						MAX_SYNC_ATTEMPTS);
 
 		for (Payment payment : pendingPayments) {
 			try {

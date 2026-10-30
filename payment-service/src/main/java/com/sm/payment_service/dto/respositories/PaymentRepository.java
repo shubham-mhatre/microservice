@@ -16,10 +16,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 	boolean existsByOrderIdAndStatusIn(Long orderId, Collection<PaymentStatus> statuses);
 
 	List<Payment> findByOrderIdOrderByCreatedAtDesc(Long orderId);
-	
-	List<Payment> findTop50ByStatusAndOrderSyncStatusAndOrderSyncAttemptsLessThanOrderByCreatedAtAsc(
-		    PaymentStatus status,
-		    OrderSyncStatus syncStatus,
-		    Integer maxAttempts
-		);
+
+	List<Payment> findTop50ByStatusInAndOrderSyncStatusAndOrderSyncAttemptsLessThanOrderByCreatedAtAsc(
+			List<PaymentStatus> statuses, OrderSyncStatus syncStatus, Integer maxAttempts);
 }
