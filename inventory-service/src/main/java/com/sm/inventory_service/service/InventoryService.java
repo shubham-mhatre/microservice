@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sm.inventory_service.entity.Inventory;
+import com.sm.inventory_service.entity.StockRelease;
 import com.sm.inventory_service.entity.repository.InventoryRepository;
+import com.sm.inventory_service.entity.repository.StockReleaseRepository;
 import com.sm.inventory_service.exception.DuplicateResourceException;
 import com.sm.inventory_service.exception.InactiveInventoryException;
 import com.sm.inventory_service.exception.InsufficientStockException;
@@ -19,6 +21,7 @@ import com.sm.inventory_service.exception.InvalidStockAdjustmentException;
 import com.sm.inventory_service.exception.ResourceNotFoundException;
 import com.sm.inventory_service.mapper.InventoryMapper;
 import com.sm.inventory_service.request.dto.InventoryRequest;
+import com.sm.inventory_service.request.dto.StockReleaseRequest;
 import com.sm.inventory_service.response.dto.ApiResponse;
 import com.sm.inventory_service.response.dto.InventoryResponseDto;
 import com.sm.inventory_service.response.dto.PageResponse;
@@ -28,9 +31,11 @@ import com.sm.inventory_service.response.dto.StockAvailabilityResponse;
 public class InventoryService {
 
 	private final InventoryRepository inventoryRepository;
+	private final StockReleaseRepository stockReleaseRepository;
 
-	public InventoryService(InventoryRepository inventoryRepository) {
+	public InventoryService(InventoryRepository inventoryRepository, StockReleaseRepository stockReleaseRepository) {
 		this.inventoryRepository = inventoryRepository;
+		this.stockReleaseRepository = stockReleaseRepository;
 	}
 
 	@Transactional
@@ -189,12 +194,35 @@ public class InventoryService {
 	}
 
 	@Transactional
-	public void releaseStock(String skuCode, Integer quantity) {
+	public void releaseStock(String skuCode, StockReleaseRequest request) {
 
-		int updatedRows = inventoryRepository.releaseStock(skuCode, quantity);
+		int inserted = stockReleaseRepository.insertIfNotExists(request.releaseReference(), skuCode,
+				request.quantity());
 
-		if (updatedRows == 0) {
-			throw new ResourceNotFoundException("Inventory not found or quantity is unavailable for SKU: " + skuCode);
+		// Release reference already exists
+		if (inserted == 0) {
+
+			StockRelease existingRelease = stockReleaseRepository.findByReleaseReference(request.releaseReference())
+					.orElseThrow(() -> new InvalidRequestStateException(
+							"Unable to verify existing stock release reference."));
+
+			// Ensure the reference is not reused with different details
+			if (!existingRelease.getSkuCode().equals(skuCode)
+					|| !existingRelease.getQuantity().equals(request.quantity())) {
+
+				throw new InvalidRequestStateException(
+						"Release reference has already been used with different details.");
+			}
+
+			// Already released successfully. Do not update inventory again.
+			return;
+		}
+
+		// Increase inventory quantity using your existing repository method
+		int updated = inventoryRepository.releaseStock(skuCode, request.quantity());
+
+		if (updated == 0) {
+			throw new ResourceNotFoundException("Active inventory not found for SKU: " + skuCode);
 		}
 	}
 

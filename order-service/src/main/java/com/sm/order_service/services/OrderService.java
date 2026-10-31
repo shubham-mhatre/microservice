@@ -110,17 +110,21 @@ public class OrderService {
 
 		} catch (RuntimeException exception) {
 
-			// Release successful reservations in reverse order.
-			Collections.reverse(reservedStocks);
+			// Release reservations in reverse order.
+			for (int i = reservedStocks.size() - 1; i >= 0; i--) {
 
-			for (ReservedStock reserved : reservedStocks) {
+				ReservedStock reserved = reservedStocks.get(i);
+
 				try {
-					inventoryServiceClient.releaseStock(reserved.skuCode(), reserved.quantity());
+					String releaseReference = "ORDER-CREATE-" + order.getOrderNumber() + "-RESERVATION-" + i;
+
+					inventoryServiceClient.releaseStock(reserved.skuCode(), reserved.quantity(), releaseReference);
+
 				} catch (RuntimeException compensationException) {
+
 					log.error("Stock compensation failed for SKU {} and quantity {}", reserved.skuCode(),
 							reserved.quantity(), compensationException);
 
-					exception.addSuppressed(compensationException);
 					exception.addSuppressed(compensationException);
 				}
 			}
@@ -141,32 +145,31 @@ public class OrderService {
 	@Transactional
 	public OrderResponse cancelOrder(Integer id) {
 
-		// 1. Find the order.
 		Order order = orderRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + id));
 
-		// 2. Allow cancellation only for PENDING or CONFIRMED orders.
+		// Allow cancellation only for PENDING or CONFIRMED orders.
 		if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
 
 			throw new InvalidRequestStateException(
 					"Order cannot be cancelled because its status is " + order.getStatus());
 		}
 
-		// 3. Release the reserved stock for each line item.
+		// Release reserved stock for every line item.
 		for (OrderLineItem item : order.getOrderLineItems()) {
-			inventoryServiceClient.releaseStock(item.getSkuCode(), item.getQuantity());
+
+			String releaseReference = "ORDER-" + order.getId() + "-LINE-" + item.getId();
+
+			inventoryServiceClient.releaseStock(item.getSkuCode(), item.getQuantity(), releaseReference);
 		}
 
 		OrderStatus oldStatus = order.getStatus();
 
-		// 4. Update the order status.
 		order.setStatus(OrderStatus.CANCELLED);
 
-		// 5. Persist and return the updated order.
 		Order cancelledOrder = orderRepository.save(order);
 
-		// 6. maintain order history
-		recordStatusHistory(cancelledOrder, oldStatus, OrderStatus.CANCELLED, "Order cancelled");
+		recordStatusHistory(cancelledOrder, oldStatus, OrderStatus.CANCELLED, "Order cancelled and inventory released");
 
 		return orderMapper.toOrderResponse(cancelledOrder);
 	}
@@ -183,13 +186,13 @@ public class OrderService {
 
 		OrderStatus currentStatus = order.getStatus();
 
-		// Idempotency: if the order already has the requested status,
-		// consider the operation successful without updating it again.
+		// Idempotency: do not repeat an already completed status update.
 		if (currentStatus == newStatus) {
 			return orderMapper.toOrderResponse(order);
 		}
 
 		boolean validTransition = switch (currentStatus) {
+
 		case PENDING -> newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.FAILED;
 
 		case CONFIRMED -> newStatus == OrderStatus.PROCESSING || newStatus == OrderStatus.FAILED;
@@ -206,11 +209,26 @@ public class OrderService {
 					"Invalid order status transition from " + currentStatus + " to " + newStatus);
 		}
 
+		// Release reserved inventory before marking the order as FAILED.
+		if (newStatus == OrderStatus.FAILED) {
+
+			for (OrderLineItem item : order.getOrderLineItems()) {
+
+				String releaseReference = "ORDER-" + order.getId() + "-LINE-" + item.getId();
+
+				inventoryServiceClient.releaseStock(item.getSkuCode(), item.getQuantity(), releaseReference);
+			}
+		}
+
+		// Update order only after inventory compensation succeeds.
 		order.setStatus(newStatus);
 
 		Order updatedOrder = orderRepository.save(order);
 
-		recordStatusHistory(updatedOrder, currentStatus, newStatus, "Order status updated");
+		String remarks = newStatus == OrderStatus.FAILED ? "Order failed and inventory released"
+				: "Order status updated";
+
+		recordStatusHistory(updatedOrder, currentStatus, newStatus, remarks);
 
 		return orderMapper.toOrderResponse(updatedOrder);
 	}

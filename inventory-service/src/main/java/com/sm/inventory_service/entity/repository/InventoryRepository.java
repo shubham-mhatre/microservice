@@ -12,37 +12,31 @@ import org.springframework.stereotype.Repository;
 import com.sm.inventory_service.entity.Inventory;
 
 @Repository
-public interface InventoryRepository extends JpaRepository<Inventory, Integer>{
+public interface InventoryRepository extends JpaRepository<Inventory, Integer> {
 
 	public List<Inventory> findBySkuCodeIn(List<String> skuCode);
-	
+
 	Optional<Inventory> findBySkuCode(String skuCode);
 
-    boolean existsBySkuCode(String skuCode);
-    
-    @Modifying
-    @Query("""
-        UPDATE Inventory i
-        SET i.quantity = i.quantity - :quantity
-        WHERE i.skuCode = :skuCode
-          AND i.active = true
-          AND i.quantity >= :quantity
-        """)
-    int reserveStock(
-            @Param("skuCode") String skuCode,
-            @Param("quantity") int quantity
-    );
+	boolean existsBySkuCode(String skuCode);
 
-    @Modifying
-    @Query("""
-        UPDATE Inventory i
-        SET i.quantity = i.quantity + :quantity
-        WHERE i.skuCode = :skuCode
-          AND i.quantity IS NOT NULL
-        """)
-    int releaseStock(
-            @Param("skuCode") String skuCode,
-            @Param("quantity") int quantity
-    );
+	@Modifying
+	@Query("""
+			UPDATE Inventory i
+			SET i.quantity = i.quantity - :quantity
+			WHERE i.skuCode = :skuCode
+			  AND i.active = true
+			  AND i.quantity >= :quantity
+			""")
+	int reserveStock(@Param("skuCode") String skuCode, @Param("quantity") int quantity);
+
+	@Modifying
+	@Query("""
+			UPDATE Inventory i
+			SET i.quantity = i.quantity + :quantity
+			WHERE i.skuCode = :skuCode
+			  AND i.quantity IS NOT NULL
+			""")
+	int releaseStock(@Param("skuCode") String skuCode, @Param("quantity") int quantity);
 
 }

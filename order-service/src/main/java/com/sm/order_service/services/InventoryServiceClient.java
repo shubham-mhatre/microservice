@@ -1,3 +1,4 @@
+
 package com.sm.order_service.services;
 
 import java.util.Map;
@@ -21,31 +22,56 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class InventoryServiceClient {
-	
-	@Value("${inventory.service.url}") 
-	private String inventoryServiceUrl;
 
-//	private final String RESERVE_URL = inventoryServiceUrl+"api/sku/{skuCode}/reserve";
-//
-//	private final String RELEASE_URL = inventoryServiceUrl+"api/sku/{skuCode}/release";
+	@Value("${inventory.service.url}")
+	private String inventoryServiceUrl;
 
 	private final RestTemplate restTemplate;
 
+	/**
+	 * Reserves the requested quantity from inventory.
+	 *
+	 * @param skuCode  product SKU code
+	 * @param quantity quantity to reserve
+	 */
 	public void reserveStock(String skuCode, int quantity) {
-		executeStockOperation(inventoryServiceUrl + "api/sku/{skuCode}/reserve", skuCode, quantity);
-	}
 
-	public void releaseStock(String skuCode, int quantity) {
-		executeStockOperation(inventoryServiceUrl + "api/sku/{skuCode}/release", skuCode, quantity);
-	}
-
-	private void executeStockOperation(String url, String skuCode, int quantity) {
+		String url = inventoryServiceUrl + "api/sku/{skuCode}/reserve";
 
 		Map<String, Integer> requestBody = Map.of("quantity", quantity);
 
-		HttpEntity<Map<String, Integer>> request = new HttpEntity<>(requestBody);
+		executeStockOperation(url, skuCode, requestBody);
+	}
+
+	/**
+	 * Releases previously reserved stock.
+	 *
+	 * @param skuCode          product SKU code
+	 * @param quantity         quantity to release
+	 * @param releaseReference unique reference to prevent duplicate stock releases
+	 */
+	public void releaseStock(String skuCode, int quantity, String releaseReference) {
+
+		String url = inventoryServiceUrl + "api/sku/{skuCode}/release";
+
+		Map<String, Object> requestBody = Map.of("quantity", quantity, "releaseReference", releaseReference);
+
+		executeStockOperation(url, skuCode, requestBody);
+	}
+
+	/**
+	 * Executes a stock operation against Inventory Service.
+	 *
+	 * @param url         inventory API URL
+	 * @param skuCode     product SKU code
+	 * @param requestBody request payload
+	 */
+	private void executeStockOperation(String url, String skuCode, Map<String, ?> requestBody) {
+
+		HttpEntity<Map<String, ?>> request = new HttpEntity<>(requestBody);
 
 		try {
+
 			ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.POST, request, Void.class, skuCode);
 
 			if (!response.getStatusCode().is2xxSuccessful()) {
@@ -68,6 +94,7 @@ public class InventoryServiceClient {
 					"Inventory Service request failed with status: " + ex.getStatusCode().value());
 
 		} catch (ResourceAccessException | IllegalStateException ex) {
+
 			throw new ServiceDownException("Inventory Service is currently unavailable.");
 		}
 	}

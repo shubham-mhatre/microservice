@@ -19,6 +19,7 @@ import com.sm.inventory_service.exception.InvalidRequestStateException;
 import com.sm.inventory_service.request.dto.InventoryRequest;
 import com.sm.inventory_service.request.dto.StockAdjustmentRequest;
 import com.sm.inventory_service.request.dto.StockQuantityUpdateRequest;
+import com.sm.inventory_service.request.dto.StockReleaseRequest;
 import com.sm.inventory_service.request.dto.StockReservationRequest;
 import com.sm.inventory_service.response.dto.ApiResponse;
 import com.sm.inventory_service.response.dto.InventoryResponseDto;
@@ -191,13 +192,14 @@ public class InventoryController {
 	 * Releases previously reserved stock.
 	 */
 	@PostMapping("/sku/{skuCode}/release")
-	public ResponseEntity<Void> releaseStock(
+	public ResponseEntity<ApiResponse<Void>> releaseStock(
 	        @PathVariable String skuCode,
-	        @Valid @RequestBody StockReservationRequest request) {
+	        @Valid @RequestBody StockReleaseRequest request) {
 
-	    inventoryService.releaseStock(skuCode, request.quantity());
+	    inventoryService.releaseStock(skuCode, request);
 
-	    return ResponseEntity.noContent().build();
+	    return ResponseEntity.ok(
+	            ApiResponse.success("Inventory stock released successfully", null));
 	}
 
 }
