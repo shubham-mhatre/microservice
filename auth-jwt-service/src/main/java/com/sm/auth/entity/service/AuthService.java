@@ -6,6 +6,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.sm.auth.config.CustomUserDetails;
 import com.sm.auth.dto.RegisterRequestDto;
 import com.sm.auth.dto.response.AuthResponseDto;
 import com.sm.auth.entity.UserCredentials;
@@ -48,7 +49,10 @@ public class AuthService {
 
 	public AuthResponseDto generateToken(Authentication authentication) {
 
-		String token = jwtService.generateToken(authentication.getName(), authentication.getAuthorities());
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+		String token = jwtService.generateToken(authentication.getName(), userDetails.getId(),
+				authentication.getAuthorities());
 
 		return new AuthResponseDto(token, "Bearer", jwtExpiration);
 	}
