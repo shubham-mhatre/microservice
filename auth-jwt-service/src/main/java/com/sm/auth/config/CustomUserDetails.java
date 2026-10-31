@@ -1,8 +1,10 @@
 package com.sm.auth.config;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.sm.auth.entity.UserCredentials;
@@ -16,15 +18,17 @@ public class CustomUserDetails  implements UserDetails{
 	
 	private String username;
 	    private String password;
+	    private final String role;
 
 	    public CustomUserDetails(UserCredentials userCredential) {
 	        this.username = userCredential.getName();
 	        this.password = userCredential.getPassword();
+	        this.role = userCredential.getRole().name();
 	    }
 
 	    @Override
 	    public Collection<? extends GrantedAuthority> getAuthorities() {
-	        return null;
+	        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
 	    }
 
 	    @Override
