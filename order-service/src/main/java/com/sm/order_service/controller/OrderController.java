@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sm.order_service.dto.request.JwtUserDetails;
 import com.sm.order_service.dto.request.OrderRequest;
 import com.sm.order_service.dto.request.UpdateOrderStatusRequest;
 import com.sm.order_service.dto.response.ApiResponse;
@@ -24,6 +26,7 @@ import com.sm.order_service.dto.response.OrderStatusResponse;
 import com.sm.order_service.dto.response.PageResponse;
 import com.sm.order_service.entity.OrderStatus;
 import com.sm.order_service.services.OrderService;
+import com.sm.order_service.util.SecurityUtils;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -36,7 +39,9 @@ import lombok.RequiredArgsConstructor;
 public class OrderController {
 
 	private final OrderService orderService;
+	private final SecurityUtils securityUtils;
 
+	@PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
 	@GetMapping("/{id}")
 	public ResponseEntity<ApiResponse<OrderResponse>> getOrderById(@PathVariable @Positive Integer id) {
 
@@ -45,6 +50,7 @@ public class OrderController {
 		return ResponseEntity.ok(ApiResponse.success("Order fetched successfully", response));
 	}
 
+	@PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
 	@PostMapping
 	public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@Valid @RequestBody OrderRequest request) {
 
@@ -54,6 +60,7 @@ public class OrderController {
 				.body(ApiResponse.success("Order created successfully", response));
 	}
 
+	@PreAuthorize("hasRole('ADMIN')")
 	@GetMapping
 	public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> getAllOrders(
 			@RequestParam(required = false) OrderStatus status,
@@ -76,6 +83,7 @@ public class OrderController {
 		return ResponseEntity.ok(ApiResponse.success("Orders fetched successfully", response));
 	}
 
+	@PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
 	@PatchMapping("/{id}/cancel")
 	public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable @Positive Integer id) {
 
@@ -84,6 +92,7 @@ public class OrderController {
 		return ResponseEntity.ok(ApiResponse.success("Order cancelled successfully", response));
 	}
 
+	@PreAuthorize("hasRole('ADMIN')")
 	@PatchMapping("/{id}/status")
 	public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(@PathVariable @Positive Integer id,
 			@Valid @RequestBody UpdateOrderStatusRequest request) {
@@ -99,6 +108,7 @@ public class OrderController {
 	 * @param id the ID of the order
 	 * @return the current order status
 	 */
+	@PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
 	@GetMapping("/{id}/status")
 	public ResponseEntity<ApiResponse<OrderStatusResponse>> getOrderStatus(@PathVariable @Positive Integer id) {
 
@@ -113,6 +123,7 @@ public class OrderController {
 	 * @param id the ID of the order
 	 * @return the order's status history
 	 */
+	@PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
 	@GetMapping("/{id}/history")
 	public ResponseEntity<ApiResponse<List<OrderStatusHistoryResponse>>> getOrderStatusHistory(
 			@PathVariable @Positive Integer id) {
@@ -128,12 +139,22 @@ public class OrderController {
 	 * @param orderNumber the unique order number
 	 * @return the order details
 	 */
+	@PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
 	@GetMapping("/number/{orderNumber}")
 	public ResponseEntity<ApiResponse<OrderResponse>> getOrderByOrderNumber(@PathVariable String orderNumber) {
 
 		OrderResponse response = orderService.getOrderByOrderNumber(orderNumber);
 
 		return ResponseEntity.ok(ApiResponse.success("Order fetched successfully", response));
+	}
+	
+	@GetMapping("/me")
+	public ApiResponse<JwtUserDetails> getCurrentUser() {
+
+	    return ApiResponse.success(
+	            "Authenticated user fetched successfully",
+	            securityUtils.getAuthenticatedUser()
+	    );
 	}
 
 }
