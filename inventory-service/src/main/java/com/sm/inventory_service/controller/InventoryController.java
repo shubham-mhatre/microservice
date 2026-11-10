@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -45,6 +46,7 @@ public class InventoryController {
 	 * @param request inventory details, including SKU code and initial quantity
 	 * @return HTTP 201 Created with the created inventory details
 	 */
+	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping
 	public ResponseEntity<ApiResponse<InventoryResponseDto>> createInventory(
 			@Valid @RequestBody InventoryRequest request) {
@@ -63,6 +65,7 @@ public class InventoryController {
 	 * @param skuCode SKU code of the inventory to deactivate
 	 * @return HTTP 204 No Content on successful deactivation
 	 */
+	@PreAuthorize("hasRole('ADMIN')")
 	@PutMapping("/sku/{skuCode}/deactivate")
 	public ResponseEntity<Void> deactivateInventory(@PathVariable String skuCode) {
 
@@ -77,6 +80,7 @@ public class InventoryController {
 	 * @param skuCode SKU code to look up
 	 * @return HTTP 200 OK with the inventory details
 	 */
+	@PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
 	@GetMapping("/sku/{skuCode}")
 	public ResponseEntity<ApiResponse<InventoryResponseDto>> getInventoryBySkuCode(@PathVariable String skuCode) {
 
@@ -92,6 +96,7 @@ public class InventoryController {
 	 * @param quantity requested quantity; must be at least 1
 	 * @return HTTP 200 OK with stock availability details
 	 */
+	@PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
 	@GetMapping("/sku/{skuCode}/availability")
 	public ResponseEntity<ApiResponse<StockAvailabilityResponse>> checkStockAvailability(@PathVariable String skuCode,
 			@RequestParam @Min(1) Integer quantity) {
@@ -108,6 +113,7 @@ public class InventoryController {
 	 * @param request new stock quantity; must not be negative
 	 * @return HTTP 200 OK with the updated inventory details
 	 */
+	@PreAuthorize("hasRole('ADMIN')")
 	@PatchMapping("/sku/{skuCode}/quantity")
 	public ResponseEntity<ApiResponse<InventoryResponseDto>> updateStockQuantity(@PathVariable String skuCode,
 			@Valid @RequestBody StockQuantityUpdateRequest request) {
@@ -124,6 +130,7 @@ public class InventoryController {
 	 * @param request stock adjustment; positive to increase and negative to decrease
 	 * @return HTTP 200 OK with the updated inventory details
 	 */
+	@PreAuthorize("hasRole('ADMIN')")
 	@PatchMapping("/sku/{skuCode}/adjust")
 	public ResponseEntity<ApiResponse<InventoryResponseDto>> adjustStock(@PathVariable String skuCode,
 			@Valid @RequestBody StockAdjustmentRequest request) {
@@ -139,6 +146,7 @@ public class InventoryController {
 	 * @param skuCode SKU code of the inventory to activate
 	 * @return HTTP 200 OK with the updated inventory details
 	 */
+	@PreAuthorize("hasRole('ADMIN')")
 	@PutMapping("/sku/{skuCode}/activate")
 	public ResponseEntity<ApiResponse<InventoryResponseDto>> activateInventory(@PathVariable String skuCode) {
 
@@ -156,6 +164,7 @@ public class InventoryController {
 	 * @param direction sort direction: asc or desc
 	 * @return HTTP 200 OK with paginated inventory details
 	 */
+	@PreAuthorize("hasRole('ADMIN')")
 	@GetMapping
 	public ResponseEntity<ApiResponse<PageResponse<InventoryResponseDto>>> getAllInventory(
 			@RequestParam(defaultValue = "0") @Min(0) int page, @RequestParam(defaultValue = "10") @Min(1) int size,
