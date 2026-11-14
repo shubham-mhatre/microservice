@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,6 +34,10 @@ public class PaymentController {
 
 	private final PaymentService paymentService;
 
+	/**
+	 * Initiates a payment for an order.
+	 */
+	@PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
 	@PostMapping
 	public ResponseEntity<?> initiatePayment(@Valid @RequestBody PaymentRequest request) {
 
@@ -48,6 +53,7 @@ public class PaymentController {
 	 * @param paymentId the ID of the payment
 	 * @return the payment details wrapped in ApiResponse
 	 */
+	@PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
 	@GetMapping("/{paymentId}")
 	public ResponseEntity<ApiResponse<PaymentResponse>> getPaymentById(@PathVariable Long paymentId) {
 
@@ -62,6 +68,7 @@ public class PaymentController {
 	 * @param orderId the ID of the order
 	 * @return payment attempts wrapped in ApiResponse
 	 */
+	@PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
 	@GetMapping("/order/{orderId}")
 	public ResponseEntity<ApiResponse<List<PaymentResponse>>> getPaymentsByOrderId(@PathVariable Long orderId) {
 
@@ -70,6 +77,10 @@ public class PaymentController {
 		return ResponseEntity.ok(ApiResponse.success("Payment details retrieved successfully", response));
 	}
 
+	/**
+	 * Processes a payment.
+	 */
+	@PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
 	@PatchMapping("/{paymentId}")
 	public ResponseEntity<ApiResponse<PaymentResponse>> processPayment(@PathVariable Long paymentId,
 			@Valid @RequestBody ProcessPaymentRequest request) {
@@ -79,6 +90,10 @@ public class PaymentController {
 		return ResponseEntity.ok(ApiResponse.success("Payment processed successfully", response));
 	}
 
+	/**
+	 * Retrieves all payments with pagination.
+	 */
+	@PreAuthorize("hasRole('ADMIN')")
 	@GetMapping
 	public ResponseEntity<ApiResponse<PageResponse<PaymentResponse>>> getAllPayments(
 			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
@@ -90,6 +105,12 @@ public class PaymentController {
 		return ResponseEntity.ok(ApiResponse.success("Payments retrieved successfully", response));
 	}
 
+	/**
+	 * Retries synchronization of payment status with Order Service.
+	 */
+	
+	
+	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/{paymentId}/sync-order")
 	public ResponseEntity<ApiResponse<PaymentResponse>> retryOrderSynchronization(
 			@PathVariable @Positive Long paymentId) {
