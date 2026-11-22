@@ -34,6 +34,9 @@ import com.sm.order_service.mapper.OrderMapper;
 import com.sm.order_service.repository.OrderRepository;
 import com.sm.order_service.repository.OrderStatusHistoryRepository;
 
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,13 +55,18 @@ public class OrderService {
 	public OrderResponse createOrder(OrderRequest request) {
 
 		Order order = new Order();
+
 		order.setOrderNumber("ORD-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase());
+
 		order.setUserId(request.getUserId());
 		order.setStatus(OrderStatus.PENDING);
 		order.setTotalAmount(BigDecimal.ZERO);
 
 		List<ReservedStock> reservedStocks = new ArrayList<>();
 		BigDecimal totalAmount = BigDecimal.ZERO;
+
+		log.info("Starting order creation | OrderNumber: {} | UserId: {} | Items: {}", order.getOrderNumber(),
+				request.getUserId(), request.getItems().size());
 
 		try {
 			for (OrderItemRequest itemRequest : request.getItems()) {
@@ -73,7 +81,7 @@ public class OrderService {
 					throw new InvalidRequestStateException("Product is unavailable or invalid for SKU: " + skuCode);
 				}
 
-				// 2. Validate price. This version disallows zero-priced products.
+				// 2. Validate price.
 				if (product.getPrice() == null || product.getPrice().signum() <= 0) {
 					throw new InvalidRequestStateException("Invalid product price for SKU: " + skuCode);
 				}
@@ -82,6 +90,10 @@ public class OrderService {
 				inventoryServiceClient.reserveStock(skuCode, itemRequest.getQuantity());
 
 				reservedStocks.add(new ReservedStock(skuCode, itemRequest.getQuantity()));
+
+				// BUSINESS LOG: Inventory reservation successful.
+				log.info("Inventory reserved successfully | OrderNumber: {} | SKU: {} | Quantity: {}",
+						order.getOrderNumber(), skuCode, itemRequest.getQuantity());
 
 				// 4. Build the order line item.
 				BigDecimal lineTotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
@@ -94,7 +106,6 @@ public class OrderService {
 				lineItem.setLineTotal(lineTotal);
 
 				order.addOrderLineItem(lineItem);
-
 				totalAmount = totalAmount.add(lineTotal);
 			}
 
@@ -103,12 +114,27 @@ public class OrderService {
 
 			Order savedOrder = orderRepository.save(order);
 
-			// 6. maintain order history
+			// 6. Maintain order history.
 			recordStatusHistory(savedOrder, null, OrderStatus.PENDING, "Order created");
+
+			// BUSINESS LOG: Log only after the database transaction commits.
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					log.info(
+							"Order created successfully | OrderId: {} | OrderNumber: {} | UserId: {} | TotalAmount: {}",
+							savedOrder.getId(), savedOrder.getOrderNumber(), savedOrder.getUserId(),
+							savedOrder.getTotalAmount());
+				}
+			});
 
 			return orderMapper.toOrderResponse(savedOrder);
 
 		} catch (RuntimeException exception) {
+
+			// BUSINESS LOG: Order creation failed.
+			log.warn("Order creation failed | OrderNumber: {} | ReservedItems: {} | Exception: {}",
+					order.getOrderNumber(), reservedStocks.size(), exception.getClass().getSimpleName());
 
 			// Release reservations in reverse order.
 			for (int i = reservedStocks.size() - 1; i >= 0; i--) {
@@ -120,10 +146,14 @@ public class OrderService {
 
 					inventoryServiceClient.releaseStock(reserved.skuCode(), reserved.quantity(), releaseReference);
 
+					// BUSINESS LOG: Compensation successful.
+					log.info("Stock compensation successful | OrderNumber: {} | SKU: {} | Quantity: {}",
+							order.getOrderNumber(), reserved.skuCode(), reserved.quantity());
+
 				} catch (RuntimeException compensationException) {
 
-					log.error("Stock compensation failed for SKU {} and quantity {}", reserved.skuCode(),
-							reserved.quantity(), compensationException);
+					log.error("Stock compensation failed | OrderNumber: {} | SKU: {} | Quantity: {}",
+							order.getOrderNumber(), reserved.skuCode(), reserved.quantity(), compensationException);
 
 					exception.addSuppressed(compensationException);
 				}

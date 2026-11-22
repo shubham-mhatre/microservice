@@ -1,3 +1,4 @@
+
 package com.sm.order_service.exception;
 
 import java.time.LocalDateTime;
@@ -22,72 +23,63 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ExceptionResponseDto> handleResourceNotFoundException(ResourceNotFoundException ex,
 			HttpServletRequest request) {
 
-		log.error("ResourceNotFoundException on {}", request.getRequestURI(), ex);
+		log.warn("Resource not found | URI: {} | Message: {}", request.getRequestURI(), ex.getMessage());
 
-		ExceptionResponseDto response = new ExceptionResponseDto(LocalDateTime.now(), ex.getMessage(),
-				HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase(), request.getRequestURI(), false);
-
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+		return buildResponse(ex.getMessage(), HttpStatus.NOT_FOUND, request);
 	}
 
 	@ExceptionHandler(InvalidRequestStateException.class)
 	public ResponseEntity<ExceptionResponseDto> handleInvalidRequestStateException(InvalidRequestStateException ex,
 			HttpServletRequest request) {
 
-		ExceptionResponseDto response = new ExceptionResponseDto(LocalDateTime.now(), ex.getMessage(),
-				HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT.getReasonPhrase(), request.getRequestURI(), false);
+		log.warn("Invalid request state | URI: {} | Message: {}", request.getRequestURI(), ex.getMessage());
 
-		return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+		return buildResponse(ex.getMessage(), HttpStatus.CONFLICT, request);
 	}
 
 	@ExceptionHandler(ServiceDownException.class)
 	public ResponseEntity<ExceptionResponseDto> handleServiceDownException(ServiceDownException ex,
 			HttpServletRequest request) {
 
-		log.error("Downstream service failure on {}", request.getRequestURI(), ex);
+		log.error("Downstream service failure | URI: {}", request.getRequestURI(), ex);
 
-		ExceptionResponseDto response = new ExceptionResponseDto(LocalDateTime.now(), ex.getMessage(),
-				HttpStatus.SERVICE_UNAVAILABLE.value(), HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
-				request.getRequestURI(), false);
-
-		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+		return buildResponse(ex.getMessage(), HttpStatus.SERVICE_UNAVAILABLE, request);
 	}
 
 	@ExceptionHandler(OptimisticLockingFailureException.class)
 	public ResponseEntity<ExceptionResponseDto> handleOptimisticLockingFailure(OptimisticLockingFailureException ex,
 			HttpServletRequest request) {
 
-		log.info("inside OptimisticLockingFailureException handler : Concurrent order modification detected on {}", request.getRequestURI(), ex);
+		log.warn("Concurrent order modification detected | URI: {} | Message: {}", request.getRequestURI(),
+				ex.getMessage());
 
-		ExceptionResponseDto response = new ExceptionResponseDto(LocalDateTime.now(),
-				"Order was modified by another request. Please retry.", HttpStatus.CONFLICT.value(),
-				HttpStatus.CONFLICT.getReasonPhrase(), request.getRequestURI(), false);
-
-		return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+		return buildResponse("Order was modified by another request. Please retry.", HttpStatus.CONFLICT, request);
 	}
 
 	@ExceptionHandler(CannotAcquireLockException.class)
 	public ResponseEntity<ExceptionResponseDto> handleLockConflict(CannotAcquireLockException ex,
 			HttpServletRequest request) {
 
-		log.info("inside CannotAcquireLockException handler : order update detected for {}: {}", request.getRequestURI(), ex.getMessage());
+		log.warn("Unable to acquire database lock | URI: {} | Message: {}", request.getRequestURI(), ex.getMessage());
 
-		ExceptionResponseDto response = new ExceptionResponseDto(LocalDateTime.now(),
-				"This order is being updated by another request. Please retry.", HttpStatus.CONFLICT.value(),
-				HttpStatus.CONFLICT.getReasonPhrase(), request.getRequestURI(), false);
-
-		return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+		return buildResponse("This order is being updated by another request. Please retry.", HttpStatus.CONFLICT,
+				request);
 	}
 
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ExceptionResponseDto> handleGenericException(Exception ex, HttpServletRequest request) {
 
-		log.error("Unexpected error on {}", request.getRequestURI(), ex);
+		log.error("Unexpected application error | URI: {}", request.getRequestURI(), ex);
 
-		ExceptionResponseDto response = new ExceptionResponseDto(LocalDateTime.now(), "An unexpected error occurred.",
-				HttpStatus.INTERNAL_SERVER_ERROR.value(), HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-				request.getRequestURI(), false);
+		return buildResponse("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR, request);
+	}
 
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	private ResponseEntity<ExceptionResponseDto> buildResponse(String message, HttpStatus status,
+			HttpServletRequest request) {
+
+		ExceptionResponseDto response = new ExceptionResponseDto(LocalDateTime.now(), message, status.value(),
+				status.getReasonPhrase(), request.getRequestURI(), false);
+
+		return ResponseEntity.status(status).body(response);
 	}
 }
