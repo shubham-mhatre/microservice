@@ -181,6 +181,8 @@ public class OrderService {
 		// Allow cancellation only for PENDING or CONFIRMED orders.
 		if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
 
+			log.warn("Order cancellation rejected | OrderId: {} | CurrentStatus: {}", id, order.getStatus());
+
 			throw new InvalidRequestStateException(
 					"Order cannot be cancelled because its status is " + order.getStatus());
 		}
@@ -191,6 +193,9 @@ public class OrderService {
 			String releaseReference = "ORDER-" + order.getId() + "-LINE-" + item.getId();
 
 			inventoryServiceClient.releaseStock(item.getSkuCode(), item.getQuantity(), releaseReference);
+
+			log.info("Inventory released successfully | OrderId: {} | SKU: {} | Quantity: {}", order.getId(),
+					item.getSkuCode(), item.getQuantity());
 		}
 
 		OrderStatus oldStatus = order.getStatus();
@@ -199,7 +204,12 @@ public class OrderService {
 
 		Order cancelledOrder = orderRepository.save(order);
 
+		// Maintain order history.
 		recordStatusHistory(cancelledOrder, oldStatus, OrderStatus.CANCELLED, "Order cancelled and inventory released");
+
+		log.info(
+				"Order cancelled successfully | OrderId: {} | OrderNumber: {} | PreviousStatus: {} | CurrentStatus: {}",
+				cancelledOrder.getId(), cancelledOrder.getOrderNumber(), oldStatus, cancelledOrder.getStatus());
 
 		return orderMapper.toOrderResponse(cancelledOrder);
 	}
@@ -218,47 +228,53 @@ public class OrderService {
 
 		// Idempotency: do not repeat an already completed status update.
 		if (currentStatus == newStatus) {
+			log.info("Order status update skipped | OrderId: {} | Status: {} | Reason: Status already applied", id,
+					currentStatus);
+
 			return orderMapper.toOrderResponse(order);
 		}
 
 		boolean validTransition = switch (currentStatus) {
-
 		case PENDING -> newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.FAILED;
-
 		case CONFIRMED -> newStatus == OrderStatus.PROCESSING || newStatus == OrderStatus.FAILED;
-
 		case PROCESSING -> newStatus == OrderStatus.SHIPPED || newStatus == OrderStatus.FAILED;
-
 		case SHIPPED -> newStatus == OrderStatus.DELIVERED;
-
 		case DELIVERED, CANCELLED, FAILED -> false;
 		};
 
 		if (!validTransition) {
+			log.warn("Order status transition rejected | OrderId: {} | CurrentStatus: {} | RequestedStatus: {}", id,
+					currentStatus, newStatus);
+
 			throw new InvalidRequestStateException(
 					"Invalid order status transition from " + currentStatus + " to " + newStatus);
 		}
 
 		// Release reserved inventory before marking the order as FAILED.
 		if (newStatus == OrderStatus.FAILED) {
-
 			for (OrderLineItem item : order.getOrderLineItems()) {
 
 				String releaseReference = "ORDER-" + order.getId() + "-LINE-" + item.getId();
 
 				inventoryServiceClient.releaseStock(item.getSkuCode(), item.getQuantity(), releaseReference);
+
+				log.info("Inventory released successfully | OrderId: {} | SKU: {} | Quantity: {}", order.getId(),
+						item.getSkuCode(), item.getQuantity());
 			}
 		}
 
 		// Update order only after inventory compensation succeeds.
 		order.setStatus(newStatus);
-
 		Order updatedOrder = orderRepository.save(order);
 
 		String remarks = newStatus == OrderStatus.FAILED ? "Order failed and inventory released"
 				: "Order status updated";
 
 		recordStatusHistory(updatedOrder, currentStatus, newStatus, remarks);
+
+		log.info(
+				"Order status updated successfully | OrderId: {} | OrderNumber: {} | PreviousStatus: {} | CurrentStatus: {}",
+				updatedOrder.getId(), updatedOrder.getOrderNumber(), currentStatus, updatedOrder.getStatus());
 
 		return orderMapper.toOrderResponse(updatedOrder);
 	}
