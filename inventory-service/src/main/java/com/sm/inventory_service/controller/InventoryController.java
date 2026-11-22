@@ -42,11 +42,14 @@ public class InventoryController {
 
 	/**
 	 * Creates a new inventory record for the given SKU.
+	 * 
+	 * product service will call thsi endpoint so 
+	 * for client credential authorization added ROLE_SERVICE_PRODUCT  
 	 *
 	 * @param request inventory details, including SKU code and initial quantity
 	 * @return HTTP 201 Created with the created inventory details
 	 */
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAuthority('ROLE_SERVICE_PRODUCT')")
 	@PostMapping
 	public ResponseEntity<ApiResponse<InventoryResponseDto>> createInventory(
 			@Valid @RequestBody InventoryRequest request) {
@@ -61,11 +64,14 @@ public class InventoryController {
 	/**
 	 * Deactivates inventory for the specified SKU without deleting the record.
 	 * Used by Product Service when a product is deactivated.
+	 * 
+	 * Product service will call this endpoint so 
+	 * for client credential authorization added ROLE_SERVICE_PRODUCT
 	 *
 	 * @param skuCode SKU code of the inventory to deactivate
 	 * @return HTTP 204 No Content on successful deactivation
 	 */
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAuthority('ROLE_SERVICE_PRODUCT')")
 	@PutMapping("/sku/{skuCode}/deactivate")
 	public ResponseEntity<Void> deactivateInventory(@PathVariable String skuCode) {
 
