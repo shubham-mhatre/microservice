@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sm.auth.dto.AuthRequestDto;
 import com.sm.auth.dto.RegisterRequestDto;
+import com.sm.auth.dto.ServiceTokenRequestDto;
 import com.sm.auth.dto.response.ApiResponse;
 import com.sm.auth.dto.response.AuthResponseDto;
 import com.sm.auth.entity.service.AuthService;
@@ -25,7 +26,6 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
 	private final AuthService authService;
-
 	private final AuthenticationManager authenticationManager;
 
 	@PostMapping("/register")
@@ -48,6 +48,15 @@ public class AuthController {
 		return ResponseEntity.ok(ApiResponse.success("Authentication successful", response));
 	}
 
+	@PostMapping("/service-token")
+	public ResponseEntity<ApiResponse<AuthResponseDto>> getServiceToken(
+			@Valid @RequestBody ServiceTokenRequestDto request) {
+
+		AuthResponseDto response = authService.generateServiceToken(request);
+
+		return ResponseEntity.ok(ApiResponse.success("Service authentication successful", response));
+	}
+
 	@GetMapping("/validate")
 	public ResponseEntity<ApiResponse<String>> validateToken(@RequestParam("token") String token) {
 
@@ -55,5 +64,4 @@ public class AuthController {
 
 		return ResponseEntity.ok(ApiResponse.success("Token is valid", "VALID"));
 	}
-
 }
