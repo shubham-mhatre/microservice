@@ -20,6 +20,7 @@ import com.sm.payment_service.dto.response.OrderServiceApiResponse;
 import com.sm.payment_service.exception.InvalidRequestStateException;
 import com.sm.payment_service.exception.OrderNotFoundException;
 import com.sm.payment_service.exception.OrderServiceUnavailableException;
+import com.sm.payment_service.service.ServiceTokenProvider;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,13 +32,19 @@ public class OrderServiceClient {
 	private String orderServiceUrl;
 
 	private final RestTemplate restTemplate;
+	private final ServiceTokenProvider serviceTokenProvider;
 
 	public OrderDetailsResponse getOrderById(Long orderId) {
 
 		String url = orderServiceUrl + "api/" + orderId;
 
 		try {
-			ResponseEntity<OrderServiceApiResponse> response = restTemplate.exchange(url, HttpMethod.GET, null,
+			HttpHeaders headers = new HttpHeaders();
+			headers.setBearerAuth(serviceTokenProvider.getToken());
+
+			HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+			ResponseEntity<OrderServiceApiResponse> response = restTemplate.exchange(url, HttpMethod.GET, requestEntity,
 					new ParameterizedTypeReference<OrderServiceApiResponse>() {
 					});
 
@@ -51,18 +58,14 @@ public class OrderServiceClient {
 
 		} catch (HttpClientErrorException.NotFound ex) {
 
-			// Order Service responded with HTTP 404.
 			throw new OrderNotFoundException("Order not found with ID: " + orderId);
 
 		} catch (RestClientException ex) {
 
-			// HTTP errors other than 404, connection failures,
-			// and other REST communication failures.
 			throw new OrderServiceUnavailableException("Unable to communicate with Order Service.", ex);
 
 		} catch (IllegalStateException ex) {
 
-			// For example: No instances available for order-service.
 			throw new OrderServiceUnavailableException("Order Service is currently unavailable.", ex);
 		}
 	}
@@ -73,6 +76,7 @@ public class OrderServiceClient {
 
 		try {
 			HttpHeaders headers = new HttpHeaders();
+			headers.setBearerAuth(serviceTokenProvider.getToken());
 			headers.setContentType(MediaType.APPLICATION_JSON);
 
 			Map<String, String> requestBody = Map.of("status", status);

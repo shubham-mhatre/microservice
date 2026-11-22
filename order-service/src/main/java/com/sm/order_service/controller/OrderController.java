@@ -41,7 +41,7 @@ public class OrderController {
 	private final OrderService orderService;
 	private final SecurityUtils securityUtils;
 
-	@PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
+	@PreAuthorize("hasAnyAuthority('ROLE_CUSTOMER', 'ROLE_ADMIN', 'ROLE_SERVICE_PAYMENT')")
 	@GetMapping("/{id}")
 	public ResponseEntity<ApiResponse<OrderResponse>> getOrderById(@PathVariable @Positive Integer id) {
 
@@ -92,7 +92,7 @@ public class OrderController {
 		return ResponseEntity.ok(ApiResponse.success("Order cancelled successfully", response));
 	}
 
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SERVICE_PAYMENT')")
 	@PatchMapping("/{id}/status")
 	public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(@PathVariable @Positive Integer id,
 			@Valid @RequestBody UpdateOrderStatusRequest request) {

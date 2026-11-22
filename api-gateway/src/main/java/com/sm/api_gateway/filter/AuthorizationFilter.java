@@ -124,10 +124,10 @@ public class AuthorizationFilter
 
         // PAYMENT SERVICE
 
-        // Process payment
+     // Process payment - CUSTOMER and ADMIN
         if (path.matches("/payment/api/[^/]+")
                 && HttpMethod.PATCH.equals(method)) {
-            return true;
+            return false;
         }
 
         // Retrieve all payments
