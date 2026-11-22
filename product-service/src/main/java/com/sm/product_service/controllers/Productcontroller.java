@@ -76,7 +76,7 @@ public class Productcontroller {
      * @param skuCode product SKU code
      * @return product details
      */
-    @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
+    @PreAuthorize("hasAuthority('ROLE_SERVICE_ORDER')")
 	@GetMapping("/sku/{skuCode}")
 	public ResponseEntity<ApiResponse<ProductResponse>> getProductBySkuCode(
 	        @PathVariable String skuCode) {

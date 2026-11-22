@@ -43,8 +43,8 @@ public class InventoryController {
 	/**
 	 * Creates a new inventory record for the given SKU.
 	 * 
-	 * product service will call thsi endpoint so 
-	 * for client credential authorization added ROLE_SERVICE_PRODUCT  
+	 * product service will call thsi endpoint so for client credential
+	 * authorization added ROLE_SERVICE_PRODUCT
 	 *
 	 * @param request inventory details, including SKU code and initial quantity
 	 * @return HTTP 201 Created with the created inventory details
@@ -62,11 +62,11 @@ public class InventoryController {
 	}
 
 	/**
-	 * Deactivates inventory for the specified SKU without deleting the record.
-	 * Used by Product Service when a product is deactivated.
+	 * Deactivates inventory for the specified SKU without deleting the record. Used
+	 * by Product Service when a product is deactivated.
 	 * 
-	 * Product service will call this endpoint so 
-	 * for client credential authorization added ROLE_SERVICE_PRODUCT
+	 * Product service will call this endpoint so for client credential
+	 * authorization added ROLE_SERVICE_PRODUCT
 	 *
 	 * @param skuCode SKU code of the inventory to deactivate
 	 * @return HTTP 204 No Content on successful deactivation
@@ -98,7 +98,7 @@ public class InventoryController {
 	/**
 	 * Checks whether the requested quantity is available for the specified SKU.
 	 *
-	 * @param skuCode SKU code to check
+	 * @param skuCode  SKU code to check
 	 * @param quantity requested quantity; must be at least 1
 	 * @return HTTP 200 OK with stock availability details
 	 */
@@ -133,7 +133,8 @@ public class InventoryController {
 	 * Increases or decreases stock by the specified adjustment amount.
 	 *
 	 * @param skuCode SKU code whose stock will be adjusted
-	 * @param request stock adjustment; positive to increase and negative to decrease
+	 * @param request stock adjustment; positive to increase and negative to
+	 *                decrease
 	 * @return HTTP 200 OK with the updated inventory details
 	 */
 	@PreAuthorize("hasRole('ADMIN')")
@@ -164,9 +165,9 @@ public class InventoryController {
 	/**
 	 * Retrieves a paginated list of inventory records with configurable sorting.
 	 *
-	 * @param page zero-based page number
-	 * @param size number of records per page
-	 * @param sortBy inventory field used for sorting
+	 * @param page      zero-based page number
+	 * @param size      number of records per page
+	 * @param sortBy    inventory field used for sorting
 	 * @param direction sort direction: asc or desc
 	 * @return HTTP 200 OK with paginated inventory details
 	 */
@@ -178,7 +179,8 @@ public class InventoryController {
 
 		// Restrict sorting to known entity properties.
 		if (!Set.of("id", "skuCode", "quantity", "active").contains(sortBy)) {
-			throw new InvalidRequestStateException("Invalid sortBy field. Allowed fields: id, skuCode, quantity, active");
+			throw new InvalidRequestStateException(
+					"Invalid sortBy field. Allowed fields: id, skuCode, quantity, active");
 		}
 
 		if (!direction.equalsIgnoreCase("asc") && !direction.equalsIgnoreCase("desc")) {
@@ -189,32 +191,35 @@ public class InventoryController {
 
 		return ResponseEntity.ok(ApiResponse.success("Inventory fetched successfully", response));
 	}
-	
+
 	/**
 	 * Reserves stock for order processing.
+	 * 
+	 * this endpoint is getting called from order-service so for client credential
+	 * authorization added ROLE_SERVICE_ORDER
 	 */
+	@PreAuthorize("hasAuthority('ROLE_SERVICE_ORDER')")
 	@PostMapping("/sku/{skuCode}/reserve")
-	public ResponseEntity<Void> reserveStock(
-	        @PathVariable String skuCode,
-	        @Valid @RequestBody StockReservationRequest request) {
+	public ResponseEntity<Void> reserveStock(@PathVariable String skuCode,
+			@Valid @RequestBody StockReservationRequest request) {
 
-	    inventoryService.reserveStock(skuCode, request.quantity());
+		inventoryService.reserveStock(skuCode, request.quantity());
 
-	    return ResponseEntity.noContent().build();
+		return ResponseEntity.noContent().build();
 	}
 
 	/**
-	 * Releases previously reserved stock.
+	 * Releases previously reserved stock. this endpoint is getting called from
+	 * order-service so for client credential authorization added ROLE_SERVICE_ORDER
 	 */
+	@PreAuthorize("hasAuthority('ROLE_SERVICE_ORDER')")
 	@PostMapping("/sku/{skuCode}/release")
-	public ResponseEntity<ApiResponse<Void>> releaseStock(
-	        @PathVariable String skuCode,
-	        @Valid @RequestBody StockReleaseRequest request) {
+	public ResponseEntity<ApiResponse<Void>> releaseStock(@PathVariable String skuCode,
+			@Valid @RequestBody StockReleaseRequest request) {
 
-	    inventoryService.releaseStock(skuCode, request);
+		inventoryService.releaseStock(skuCode, request);
 
-	    return ResponseEntity.ok(
-	            ApiResponse.success("Inventory stock released successfully", null));
+		return ResponseEntity.ok(ApiResponse.success("Inventory stock released successfully", null));
 	}
 
 }

@@ -5,8 +5,10 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
@@ -27,6 +29,7 @@ public class InventoryServiceClient {
 	private String inventoryServiceUrl;
 
 	private final RestTemplate restTemplate;
+	private final ServiceTokenProvider serviceTokenProvider;
 
 	/**
 	 * Reserves the requested quantity from inventory.
@@ -60,7 +63,7 @@ public class InventoryServiceClient {
 	}
 
 	/**
-	 * Executes a stock operation against Inventory Service.
+	 * Executes an authenticated stock operation against Inventory Service.
 	 *
 	 * @param url         inventory API URL
 	 * @param skuCode     product SKU code
@@ -68,7 +71,11 @@ public class InventoryServiceClient {
 	 */
 	private void executeStockOperation(String url, String skuCode, Map<String, ?> requestBody) {
 
-		HttpEntity<Map<String, ?>> request = new HttpEntity<>(requestBody);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setBearerAuth(serviceTokenProvider.getToken());
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		HttpEntity<Map<String, ?>> request = new HttpEntity<>(requestBody, headers);
 
 		try {
 

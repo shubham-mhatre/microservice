@@ -5,6 +5,7 @@ import java.security.MessageDigest;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,18 @@ public class AuthService {
 	@Value("${security.service.product.client-secret}")
 	private String productClientSecret;
 
+	@Value("${security.service.order.client-id}")
+	private String orderClientId;
+
+	@Value("${security.service.order.client-secret}")
+	private String orderClientSecret;
+	
+	@Value("${security.service.payment.client-id}")
+	private String paymentClientId;
+
+	@Value("${security.service.payment.client-secret}")
+	private String paymentClientSecret;
+
 	public String saveUser(RegisterRequestDto request) {
 
 		if (userCredentialsRepository.existsByName(request.getName())) {
@@ -70,17 +83,40 @@ public class AuthService {
 
 	public AuthResponseDto generateServiceToken(ServiceTokenRequestDto request) {
 
-		boolean validClientId = productClientId.equals(request.getClientId());
+		String serviceName;
+		String serviceRole;
+		String expectedSecret;
 
-		boolean validClientSecret = MessageDigest.isEqual(productClientSecret.getBytes(StandardCharsets.UTF_8),
-				request.getClientSecret().getBytes(StandardCharsets.UTF_8));
+		if (productClientId.equals(request.getClientId())) {
 
-		if (!validClientId || !validClientSecret) {
-			throw new org.springframework.security.authentication.BadCredentialsException(
-					"Invalid service credentials");
+			serviceName = "product-service";
+			serviceRole = "ROLE_SERVICE_PRODUCT";
+			expectedSecret = productClientSecret;
+
+		} else if (orderClientId.equals(request.getClientId())) {
+
+			serviceName = "order-service";
+			serviceRole = "ROLE_SERVICE_ORDER";
+			expectedSecret = orderClientSecret;
+
+		}else if (paymentClientId.equals(request.getClientId())) {
+
+		    serviceName = "payment-service";
+		    serviceRole = "ROLE_SERVICE_PAYMENT";
+		    expectedSecret = paymentClientSecret;
+
+		} else {
+			throw new BadCredentialsException("Invalid service credentials");
 		}
 
-		String token = jwtService.generateServiceToken("product-service", List.of("ROLE_SERVICE_PRODUCT"));
+		boolean validSecret = MessageDigest.isEqual(expectedSecret.getBytes(StandardCharsets.UTF_8),
+				request.getClientSecret().getBytes(StandardCharsets.UTF_8));
+
+		if (!validSecret) {
+			throw new BadCredentialsException("Invalid service credentials");
+		}
+
+		String token = jwtService.generateServiceToken(serviceName, List.of(serviceRole));
 
 		return new AuthResponseDto(token, "Bearer", serviceJwtExpiration);
 	}
